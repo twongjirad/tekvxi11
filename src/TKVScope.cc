@@ -4,6 +4,7 @@
 
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
+#include "TKVFastFrameSettings.hh"
 
 int TKVScope::sNumInstances = 0;
 
@@ -21,6 +22,7 @@ TKVScope::TKVScope( std::string ipaddress ) {
   
   memset( m_channelSettings, 0, MAX_CHANNELS );
   m_horizontalSettings = NULL;
+  m_fastframeSettings = NULL;
 }
 
 TKVScope::~TKVScope() {

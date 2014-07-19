@@ -25,13 +25,13 @@ libtekvxi.so: $(COBJS)
 	echo "Making library"
 	$(GXX) -shared $(LDFLAGS) -o $@ $^
 .obj/%.o: src/%.cc
-	mkdir -f .obj
+	mkdir -p .obj
 	$(GXX) -c $(CXXFLAGS) -o $@ $^
 .obj/%.o: exesrc/%.cc
-	mkdir -f .obj
+	mkdir -p .obj
 	$(GXX) -c $(CXXFLAGS) -o $@ $^
 bin/%: .obj/%.o libtekvxi.so
-	mkdir -f bin
+	mkdir -p bin
 	$(GXX) $(CXXFLAGS) -o $@ $^ $(VXILIB)
 
 .DEFAULT: $(EXEBIN)

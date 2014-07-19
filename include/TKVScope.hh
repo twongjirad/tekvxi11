@@ -13,6 +13,7 @@
 
 class TKVTekChannelSettings;    // vertical scale settings per channel
 class TKVTekHorizontalSettings; // information about time axis
+class TKVFastFrameSettings;     // information for fast frame acquisition mode
 
 class TKVScope {
   friend class TKVScopeManager;
@@ -43,6 +44,7 @@ protected:
 
   TKVTekChannelSettings* m_channelSettings[MAX_CHANNELS];
   TKVTekHorizontalSettings* m_horizontalSettings;
+  TKVFastFrameSettings* m_fastframeSettings;
 
   enum { kError=-1, kOpenOK, kClosedOK };
   int fStatus;
