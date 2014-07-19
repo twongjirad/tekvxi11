@@ -1,0 +1,47 @@
+/*
+ * Class provides interface to scope
+ */
+
+#ifndef __TKVScope__
+#define __TKVScope__
+
+#include <string>
+#include "vxi11_user.h"
+
+#define BUF_LEN 100000
+
+class TKVScope {
+  friend class TKVScopeManager;
+
+protected:
+  // Only the TKVScopeManager is allowed to make new instances
+  TKVScope( std::string ipaddress );
+  ~TKVScope();
+
+public:
+
+  bool isOK();
+  bool isOpen();
+  void idn();
+
+protected:
+
+  CLINK* open_device( std::string ipaddress );
+  CLINK* get_clink();
+
+  std::string m_ipaddress;
+  int m_scopenum;
+  int m_iid;
+  std::string m_nickname;
+  CLINK* m_clink;
+
+  enum { kError=-1, kOpenOK, kClosedOK };
+  int fStatus;
+
+private:
+  static int sNumInstances;
+
+};
+
+
+#endif

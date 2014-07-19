@@ -1,0 +1,15 @@
+#include "TKVScopeManager.hh"
+#include "TKVScope.hh"
+#include <iostream>
+
+int main( int narg, char** argv ) {
+
+  TKVScopeManager* man = TKVScopeManager::getScopeManager();
+  man->openDevice( "192.168.1.3" );
+  
+
+  std::cout << "Finished." << std::endl;
+  std::cin.get();
+
+  return 0;
+}

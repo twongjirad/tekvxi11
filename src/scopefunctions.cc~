@@ -1,0 +1,159 @@
+#include <cstring>
+#include <iostream>
+#include <ni488.h>
+#include "scopefunctions.hh"
+
+int initialize() {
+
+  char writebuf[100];
+  char buffer[100];
+
+
+  // INITIALIZE DEVICE
+  int devicenumber = ibdev(0, 1, 0, 13, 1, 0);
+  ibclr(devicenumber);
+  sprintf(writebuf, "*IDN?");
+  ibwrt(devicenumber, writebuf, 5);
+  ibrd(devicenumber, buffer, 46);  
+
+  ibtmo(devicenumber, T1000s);
+
+  //SET SCOPE TO SINGLE ACQUIRE MODE
+  // scope gets one waveform and waits for next command
+  sprintf(writebuf, "ACQ:STOPAfter SEQUENCE");
+  ibwrt(devicenumber, writebuf, 22); 
+  sprintf(writebuf, "ACQ:STOPAfter?");
+  ibwrt(devicenumber, writebuf, 14);
+  ibrd(devicenumber, buffer, 50);
+
+  std::cout << "OPENED DEVICE: " << buffer << std::endl;
+  std::cout << "STOP AFTER: " << buffer << std::endl;
+
+}
+
+int setChannelOutputBinary(int deviceNum, int channelNum, int bytes) {
+  
+  char writebuf[100];
+  sprintf(writebuf, "DATa:SOURCE CH%d", channelNum);
+  ibwrt( deviceNum, writebuf, strlen(writebuf) );
+    
+  sprintf(writebuf, "DATAa:WIDth %d", bytes);
+  ibwrt( deviceNum, writebuf, strlen(writebuf) );
+    
+  sprintf(writebuf, "DATa:ENCdg RIBinary");
+  ibwrt( deviceNum, writebuf, strlen(writebuf) );
+
+  return 0;
+}
+
+int setChannelOutputASCII( int deviceNum, int channelNum ) {
+
+  char writebuf[100];
+  sprintf(writebuf, "DATa:SOURCE CH%d", channelNum);
+  ibwrt( deviceNum, writebuf, strlen(writebuf) );
+    
+  sprintf(writebuf, "DATa:ENCdg ASCIi");
+  ibwrt( deviceNum, writebuf, strlen(writebuf) );
+
+  return 0;
+
+}
+
+int setFastFrame(int devicenum, int fastframe_numframes) {
+
+  char writebuf[500];
+  char buffer[256];
+
+  // Determine if fast frame is on
+  int ffstate = 0;
+  sprintf(writebuf, "HOR:FAST:STATE?");
+  ibwrt(devicenum, writebuf, strlen(writebuf));
+  ibrd(devicenum, buffer, 1);
+  sscanf(buffer, "%d", &ffstate);
+  if (ffstate==0) {
+    std::cout << "FAST FRAME MODE ALREADY OFF." << std::endl;
+  }
+  else if (ffstate==1) {
+    std::cout << "FAST FRAME MODE ALREADY ON. TURNING OFF TO RESET." << std::endl;
+    sprintf(writebuf,"HOR:FAST:STATE 0");
+    ibwrt(devicenum, writebuf, strlen(writebuf));
+  }
+  
+  //SET FAST FRAME COUNTS (does not seem to be effective)------
+  sprintf(writebuf, "HORizontal:FASTframe:COUNT %d",fastframe_numframes);
+  ibwrt(devicenum, writebuf, strlen(writebuf));
+  std::cout << "ACTIVATE FAST FRAME (" << writebuf << ")" << std::endl;
+  ibwait(devicenum,TIMO|RQS);    
+  sprintf(writebuf, "HOR:FAST:STATE ON");
+  ibwrt(devicenum, writebuf, strlen(writebuf));
+  ibwait(devicenum,TIMO|RQS);
+
+  return 0;
+}
+
+int getDataASCII(int deviceNum, int channelNum) {
+
+ 
+//   char** trace[4];
+//   string chstring;
+//   char ch_char[5];
+  
+    
+//     sprintf(ch_char, "CH%d", ch+1);
+//     chstring = ch_char;
+//     //ALLOCATE MEMORY FOR FRAMES
+//     int frames = int(Parameters[ch][6]);   
+//     cout << "ALLOCATE MEMORY, FRAMES: " << frames << endl;
+//     if ((trace[ch] = (char**)malloc((size_t)(frames))) == NULL) {
+//     cout << "OUT OF MEMORY" << endl;
+//     return 0;
+//     }
+    
+//     //CALL CHANNEL
+//     cout << "CALL CHANNEL, Buffer: ";
+//     command = "data:source " + chstring;
+//     sprintf(writebuf, "%s", command.c_str());
+//     cout << writebuf << endl;
+//     ibwrt(devicenum, writebuf, command.length());    
+//     ibwait(devicenum, TIMO|RQS);
+//     command = "DATa:SOUrce?";
+//     sprintf(writebuf, "%s", command.c_str());
+//     ibwrt(devicenum, writebuf, command.length());
+//     ibrd(devicenum, buffer, 4);
+//     buffer[4] = '\0';
+//     cout << "SOURCE: " << buffer << endl;
+   
+//     ibwait(devicenum, TIMO|RQS);
+
+
+//     //CALL WAVEFORM
+//     command = "CURVe?";
+//     sprintf(writebuf, command.c_str());
+//     ibwrt(devicenum, writebuf, command.length());
+//     cout << "WAVEFORM CALLED, CHANNEL " << ch+1 << endl;
+//     ibwait(devicenum, TIMO|RQS);
+//     for (int i=0; i<int(Parameters[ch][6]);i++) {
+//       if ((trace[ch][i] = (char*)malloc((size_t)(Parameters[ch][3]*10*3))) == NULL) {
+// 	cout << "OUT OF MEMORY" << endl;
+// 	return 0;
+//       }
+//       ibrd(devicenum, trace[ch][i], int(Parameters[ch][3])*10*3);
+//       cout << "WAVEFORM: " << trace[ch][i] << endl;
+//     }
+  
+//     }
+
+//     //FREE MEMORY, ASCII----------------------------
+//     cout << "FREE MEMORY" << endl;
+//     for (int ch=0; ch<NumChannels;ch++) {
+//     for (int i=0; i<int(Parameters[ch][6]);i++) {
+//       //FREE TRACES IN FRAME
+//       free(trace[ch][i]);
+//       cout << "FREE FRAME" << endl;
+//     }
+//     free(trace[ch]);
+//     cout << "FREE CHANNEL" << endl;
+//     }
+    
+  return 0;
+}

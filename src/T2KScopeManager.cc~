@@ -1,0 +1,5 @@
+#include "TKVScopeManager.hh"
+
+TKVScopeManager::TKVScopeManager() {}
+
+TKVScopeManager::~TKVScopeManager() {}
