@@ -20,6 +20,8 @@ int main( int narg, char** argv ) {
   for (int i=1; i<=4; i++)
     tek1->getChannelSettings(i)->print();
 
+  tek1->setChannelToRecord( 1, true );
+
   tek1->readHorizontalSettings();
   tek1->getHorizontalSettings()->print();
 
