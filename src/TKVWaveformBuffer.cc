@@ -94,6 +94,7 @@ void TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff,
     // std::cout << "bytes in char: " << sizeof(char) << std::endl;
 
     std::cout << "Parsing " << ndelivered << " delivered waveform(s) ..." << std::endl;
+    nstored = ndelivered;
     
     for ( long iframe=0; iframe<ndelivered; iframe++ ) {
       //std::cout << "Frame " << iframe+1 << " of " << ndelivered << std::endl;

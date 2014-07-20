@@ -13,6 +13,11 @@
 #include "TKVFastFrameSettings.hh"
 #include "TKVDataSettings.hh"
 #include "TKVWaveformBuffer.hh"
+#include "TKVWaveformTree.hh"
+
+#ifdef ROOTENABLED
+#include "TFile.h"
+#endif
 
 int TKVScope::sNumInstances = 0;
 
@@ -385,7 +390,7 @@ void TKVScope::acquireOneTrigger() {
   
   // Grab the traces
   char* databuffer = new char[DATA_BUF_LEN];
-  TKVWaveformBuffer* waveforms[MAX_CHANNELS];
+  TKVWaveformBuffer** waveforms = new TKVWaveformBuffer*[MAX_CHANNELS];
   for (int ch=0; ch<MAX_CHANNELS; ch++) {
     if ( m_channelSettings[ch]->record ) {
       waveforms[ch] = new TKVWaveformBuffer();
@@ -401,5 +406,15 @@ void TKVScope::acquireOneTrigger() {
     else
       waveforms[ch] = NULL;
   }
+
+#ifdef ROOTENABLED
+  // Convert raw data to ROOT TTree format
+  TFile* out = new TFile("testone.root", "RECREATE" );
+  TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
+  std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+  out->Write();
+  delete out;
+  //delete wfmtree;
+#endif
 
 }

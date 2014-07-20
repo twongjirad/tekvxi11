@@ -15,6 +15,7 @@ public:
   void extractFromBuffer( char* buf, TKVFastFrameSettings* ff, TKVDataSettings* data );
 
   int nframes;
+  int nstored;
   int nsamples;
   
   double** adc;
