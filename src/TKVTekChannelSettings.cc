@@ -7,6 +7,7 @@
 
 TKVTekChannelSettings::TKVTekChannelSettings(int chnumber, char* input ){
   chID = chnumber;
+  setToRecord(false);
   updateParameters( input );
 }
 

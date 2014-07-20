@@ -6,6 +6,7 @@
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
 #include "TKVFastFrameSettings.hh"
+#include "TKVDataSettings.hh"
 
 int TKVScope::sNumInstances = 0;
 
@@ -72,26 +73,49 @@ TKVTekChannelSettings* TKVScope::getChannelSettings(int ch) {
   return m_channelSettings[ch-1];
 }
 
+void TKVScope::setChannelToRecord( int ch, bool record ) {
+  getChannelSettings( ch )->setToRecord( record );
+}
+
 /* ------------------------------------------
    SCOPE INTERFACE COMMANDS
    ------------------------------------------ */
 
-void TKVScope::idn() {
-  char cmd[256];
-  memset(cmd,0,256);
-  char buf[BUF_LEN];
-  memset(buf,0,BUF_LEN);
-  sprintf( cmd, "*IDN?" );
-  int ret = vxi11_send( m_clink, cmd );
+int TKVScope::query( std::string command, char* buf ) {
+  int ret = vxi11_send( m_clink, command.c_str() );
   if ( ret<0 ) {
-    std::cout << "Error sending *IDN?" << std::endl;
-    return;
+    std::cout << "Error sending " << command << std::endl;
+    return -1;
   }
   long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
-  if ( bytes_ret>0 )
-    std::cout << std::string(buf) << std::endl;
-  else if ( bytes_ret==-15 ) 
-    std::cout << "Sent *IDN? *** [ NO RESPONSE ] ***" << std::endl;
+  if ( bytes_ret>0 ) {
+    return 0;
+  }
+  else if ( bytes_ret==-15 ) {
+    std::cout << "Sent " << command << " *** [ NO RESPONSE ] ***" << std::endl;
+    return -1;
+  }
+  else {
+    std::cout << "Sent " << command << " *** [ ERROR ] ***" << std::endl;
+    return -1;
+  }
+
+  return 0;
+}
+
+int TKVScope::sendcmd( std::string command ) {
+  int ret = vxi11_send( m_clink, command.c_str() );
+  if ( ret<0 ) {
+    std::cout << "Error sending " << command << std::endl;
+    return -1;
+  }  
+  return 0;
+}
+
+void TKVScope::idn() {
+  char buf[BUF_LEN];
+  memset(buf,0,BUF_LEN);
+  int err = query( "*IDN?", buf );
   return ;
 }
 
@@ -194,4 +218,95 @@ void TKVScope::readFastFrameSettings() {
   else if ( bytes_ret==-15 ) 
     std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
   return ;  
+}
+
+
+void TKVScope::readDataSettings() {
+  if ( !isOpen() ) 
+    return;
+
+  char buf[BUF_LEN];
+  memset(buf,0,BUF_LEN);
+  int err;
+
+  bool success = true;
+  TKVDataSettings* data = new TKVDataSettings();
+
+  // Volts per ADC
+  err = query( "WFMPre:YMUlt?", buf );
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->voltsperadc = std::atof( buf );
+  }
+
+  // ADC Offset
+  memset(buf,0,BUF_LEN);
+  err = query("WFMPre:YOFf?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->adcoffset = std::atoi( buf );
+  }
+
+  // Bytes per word (or point)
+  memset(buf,0,BUF_LEN);
+  err = query("WFMPre:BYT_Nr?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->bytesperword = std::atoi( buf );
+  }
+
+  // Bytes per word (or point)
+  memset(buf,0,BUF_LEN);
+  err = query("WFMPre:NR_Pt?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->nsamples = std::atoi( buf );
+  }
+
+  // Data mode
+  memset(buf,0,BUF_LEN);
+  err = query("DATa:ENCdg?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    char encode[50];
+    sscanf( buf, "%s", encode );
+    data->mode = std::string(encode);
+  }  
+
+  // Secs per Sample
+  memset(buf,0,BUF_LEN);
+  err = query("WFMOutpre:XINcr?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->secspertdc = std::atof( buf );
+  } 
+
+  m_dataSettings = data;
+}
+
+
+void TKVScope::acquireOneTrigger() {
+  // int err = 0;
+  // // Turn off Fast Frame
+  // err = sendcmd( "HOR:FAST:STATE 0" );
+
+  // // Channels that are on set at scope
 }

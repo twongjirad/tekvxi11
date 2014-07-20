@@ -15,9 +15,12 @@ public:
   typedef enum { DC=0, AC } coupling_t;
   void updateParameters( char* scope_output_string );
   void print();
+  void setToRecord( bool dowerecord=true ) { record = dowerecord; };
+  bool willRecord() { return record; };
 
 protected:
   int chID;
+  bool record;
   double bandwidth;
   coupling_t coupling;
   double offset;

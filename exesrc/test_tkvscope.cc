@@ -3,6 +3,7 @@
 #include "TKVFastFrameSettings.hh"
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
+#include "TKVDataSettings.hh"
 #include <iostream>
 
 int main( int narg, char** argv ) {
@@ -25,6 +26,8 @@ int main( int narg, char** argv ) {
   tek1->readFastFrameSettings();
   tek1->getFastFrameSettings()->print();
 
+  tek1->readDataSettings();
+  tek1->getDataSettings()->print();
   
 
   std::cout << "Finished." << std::endl;
