@@ -30,7 +30,8 @@ int main( int narg, char** argv ) {
 
   tek1->readDataSettings();
   tek1->getDataSettings()->print();
-  
+
+  tek1->acquireOneTrigger();
 
   std::cout << "Finished." << std::endl;
   std::cin.get();

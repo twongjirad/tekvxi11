@@ -9,6 +9,7 @@
 #include "vxi11_user.h"
 
 #define BUF_LEN 100000
+#define DATA_BUF_LEN 10000000
 #define MAX_CHANNELS 4
 
 class TKVTekChannelSettings;    // vertical scale settings per channel
@@ -47,6 +48,7 @@ protected:
   CLINK* get_clink();
   int query( std::string string, char* buff );
   int sendcmd( std::string command );
+  void waitforscope();
 
   std::string m_ipaddress;
   int m_scopenum;

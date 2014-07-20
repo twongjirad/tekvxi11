@@ -2,11 +2,17 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <time.h>
+//#include <thread>
+//#include <chrono>
+#include <unistd.h> // for sleep function
+#include <assert.h>
 
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
 #include "TKVFastFrameSettings.hh"
 #include "TKVDataSettings.hh"
+#include "TKVWaveformBuffer.hh"
 
 int TKVScope::sNumInstances = 0;
 
@@ -110,6 +116,28 @@ int TKVScope::sendcmd( std::string command ) {
     return -1;
   }  
   return 0;
+}
+
+void TKVScope::waitforscope() {
+  int err;
+  clock_t init, final;
+  init = clock();
+  double sec_elapsed = 0;
+  bool acqdone = false;
+  char buf[BUF_LEN];
+  while ( acqdone==false && sec_elapsed<3600 ) {
+    //std::this_thread::sleep_for( std::chrono::seconds(1.0) );
+    //sleep(1);
+    usleep( 250000 ); // 250 milliseconds
+    err = query( "*OPC?", buf );
+    if ( err!=0 ) assert(false);
+    final = clock()-init;
+    sec_elapsed = (double)final/(double)CLOCKS_PER_SEC;
+    //std::cout << "*OPC? check after " << sec_elapsed << ": " << buf << std::endl;
+    if ( std::atoi(buf)==1 ) {
+      acqdone=true;
+    }
+  }
 }
 
 void TKVScope::idn() {
@@ -299,14 +327,79 @@ void TKVScope::readDataSettings() {
     data->secspertdc = std::atof( buf );
   } 
 
+  // frames in the data block
+  memset(buf,0,BUF_LEN);
+  err = query("WFMOutpre:NR_FR?",buf);
+  if ( err<0) {
+    delete data;
+    return;
+  }
+  else
+    data->framesinbuffer = std::atoi(buf);
+
   m_dataSettings = data;
 }
 
 
 void TKVScope::acquireOneTrigger() {
-  // int err = 0;
-  // // Turn off Fast Frame
-  // err = sendcmd( "HOR:FAST:STATE 0" );
+  int err = 0;
+  // Turn off Fast Frame
+  err = sendcmd( "HOR:FAST:STATE 0" );
+  if ( err!=0 ) assert(false);
 
-  // // Channels that are on set at scope
+  // Set encoding
+  err = sendcmd( "DATa:ENCg RIBinary" );
+  if ( err!=0 ) assert(false);
+
+  // Tell scope to enter into single sequence mode
+  err = sendcmd( "ACQuire:STOPAfter SEQuence" );
+  if ( err!=0 ) assert(false);
+
+  // Tell scope to acquire
+  std::cout << "Staring single acquisition" << std::endl;
+  err = sendcmd( "ACQ:STATE RUN" );
+  if ( err!=0 ) assert(false);
+
+  clock_t init, final;
+  init = clock();
+  double sec_elapsed = 0;
+  bool acqdone = false;
+  char buf[BUF_LEN];
+  while ( acqdone==false && sec_elapsed<3600 ) {
+    //std::this_thread::sleep_for( std::chrono::seconds(1.0) );
+    //sleep(1);
+    usleep( 250000 ); // 250 milliseconds
+    err = query( "*OPC?", buf );
+    if ( err!=0 ) assert(false);
+    final = clock()-init;
+    sec_elapsed = (double)final/(double)CLOCKS_PER_SEC;
+    std::cout << "*OPC? check after " << sec_elapsed << ": " << buf << std::endl;
+    if ( std::atoi(buf)==1 ) {
+      acqdone=true;
+    }
+  }
+
+  // Sync the scope settings
+  readDataSettings();
+  readFastFrameSettings();
+  
+  // Grab the traces
+  char* databuffer = new char[DATA_BUF_LEN];
+  TKVWaveformBuffer* waveforms[MAX_CHANNELS];
+  for (int ch=0; ch<MAX_CHANNELS; ch++) {
+    if ( m_channelSettings[ch]->record ) {
+      waveforms[ch] = new TKVWaveformBuffer();
+      char command[50];
+      sprintf(command, "DATa:SOUrce CH%d", ch+1 );
+      err = sendcmd( command );
+
+      err = query("CURVe?", databuffer );
+      waitforscope();
+
+      waveforms[ch]->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+    }
+    else
+      waveforms[ch] = NULL;
+  }
+
 }

@@ -8,6 +8,7 @@ class TKVDataSettings;
 
 class TKVWaveformBuffer {
 
+public:
   TKVWaveformBuffer();
   ~TKVWaveformBuffer();
   

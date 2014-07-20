@@ -23,6 +23,7 @@ protected:
   double voltsperadc;
   double secspertdc;
   int adcoffset;
+  int framesinbuffer;
   double nsamples;
   std::string mode;
 
