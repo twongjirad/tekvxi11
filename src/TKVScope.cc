@@ -126,11 +126,38 @@ void TKVScope::getHorizontalSettings() {
   }
   long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
   if ( bytes_ret>0 ) {
-    if ( m_channelSettings==NULL )
+    if ( m_horizontalSettings==NULL )
       m_horizontalSettings = new TKVTekHorizontalSettings( buf );
     else
       m_horizontalSettings->updateParameters( buf );
     //m_horizontalSettings->print();
+  }
+  else if ( bytes_ret==-15 ) 
+    std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
+  return ;  
+}
+
+void TKVScope::getFastFrameSettings() {
+  if ( !isOpen() ) 
+    return;
+
+  char cmd[256];
+  memset(cmd,0,256);
+  char buf[BUF_LEN];
+  memset(buf,0,BUF_LEN);
+  sprintf( cmd, "HOR?");
+  int ret = vxi11_send( m_clink, cmd );
+  if ( ret<0 ) {
+    std::cout << "Error sending: " << cmd << std::endl;
+    return;
+  }
+  long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
+  if ( bytes_ret>0 ) {
+    if ( m_fastframeSettings==NULL )
+      m_fastframeSettings = new TKVFastFrameSettings( buf );
+    else
+      m_fastframeSettings->updateParameters( buf );
+    //m_fastframeSettings->print();
   }
   else if ( bytes_ret==-15 ) 
     std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;

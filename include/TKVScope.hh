@@ -30,6 +30,7 @@ public:
   void idn();
   void getChannelSettings(int ch);
   void getHorizontalSettings();
+  void getFastFrameSettings();
 
 protected:
 
