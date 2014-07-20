@@ -11,6 +11,7 @@ public:
   ~TKVFastFrameSettings();
 
   void updateParameters( char* scope_query_output );
+  void print();
 
 protected:
 

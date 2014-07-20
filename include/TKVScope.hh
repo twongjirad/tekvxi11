@@ -28,9 +28,13 @@ public:
   bool isOK();
   bool isOpen();
   void idn();
-  void getChannelSettings(int ch);
-  void getHorizontalSettings();
-  void getFastFrameSettings();
+  void readChannelSettings(int ch);
+  void readHorizontalSettings();
+  void readFastFrameSettings();
+
+  TKVTekChannelSettings* getChannelSettings(int ch);
+  TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
+  TKVFastFrameSettings* getFastFrameSettings() { return m_fastframeSettings; };
 
 protected:
 

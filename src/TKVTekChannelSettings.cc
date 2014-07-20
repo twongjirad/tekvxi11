@@ -67,5 +67,4 @@ void TKVTekChannelSettings::print() {
   std::cout << " gain: " << gain << std::endl;
   std::cout << " termination: " << termination << " Ohms" << std::endl;
   std::cout << "--------------------------" << std::endl;
-  
 }

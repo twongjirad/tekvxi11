@@ -1,6 +1,7 @@
 #include "TKVScope.hh"
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
 
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
@@ -61,6 +62,17 @@ bool TKVScope::isOpen() {
 }
 
 /* ------------------------------------------
+   GET/SET
+   ------------------------------------------ */
+TKVTekChannelSettings* TKVScope::getChannelSettings(int ch) {
+  if ( ch<=0 || ch>MAX_CHANNELS ) {
+    std::cout << "Invalid channel number: range=[1," << MAX_CHANNELS << "]" << std::endl;
+    return NULL;
+  }
+  return m_channelSettings[ch-1];
+}
+
+/* ------------------------------------------
    SCOPE INTERFACE COMMANDS
    ------------------------------------------ */
 
@@ -83,9 +95,14 @@ void TKVScope::idn() {
   return ;
 }
 
-void TKVScope::getChannelSettings(int ch) {
+void TKVScope::readChannelSettings(int ch) {
   if ( !isOpen() ) 
     return;
+
+  if ( ch<0 || ch>MAX_CHANNELS ) {
+    std::cout << "Invalid channel number: range=[1," << MAX_CHANNELS << "]" << std::endl;
+    return;
+  }
 
   char cmd[256];
   memset(cmd,0,256);
@@ -103,14 +120,13 @@ void TKVScope::getChannelSettings(int ch) {
       m_channelSettings[ch-1] = new TKVTekChannelSettings( ch, buf );
     else
       m_channelSettings[ch-1]->updateParameters( buf );
-    m_channelSettings[ch-1]->print();
   }
   else if ( bytes_ret==-15 ) 
     std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
   return ;  
 }
 
-void TKVScope::getHorizontalSettings() {
+void TKVScope::readHorizontalSettings() {
   if ( !isOpen() ) 
     return;
 
@@ -118,7 +134,7 @@ void TKVScope::getHorizontalSettings() {
   memset(cmd,0,256);
   char buf[BUF_LEN];
   memset(buf,0,BUF_LEN);
-  sprintf( cmd, "HOR?");
+  sprintf( cmd, "HOR:MAI?");
   int ret = vxi11_send( m_clink, cmd );
   if ( ret<0 ) {
     std::cout << "Error sending: " << cmd << std::endl;
@@ -130,14 +146,31 @@ void TKVScope::getHorizontalSettings() {
       m_horizontalSettings = new TKVTekHorizontalSettings( buf );
     else
       m_horizontalSettings->updateParameters( buf );
-    //m_horizontalSettings->print();
   }
-  else if ( bytes_ret==-15 ) 
+  else if ( bytes_ret==-15 )  {
     std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
-  return ;  
+    return;
+  }
+
+  // also get record length
+  sprintf( cmd, "HOR:RESO?");
+  ret = vxi11_send( m_clink, cmd );
+  if ( ret<0 ) {
+    std::cout << "Error sending: " << cmd << std::endl;
+    return;
+  }
+  bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
+  if ( bytes_ret>0 ) {
+    m_horizontalSettings->recordlength = std::atof( buf );
+  }
+  else if ( bytes_ret==-15 )  {
+    std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
+    m_horizontalSettings->recordlength = -1;
+  }
+  return;  
 }
 
-void TKVScope::getFastFrameSettings() {
+void TKVScope::readFastFrameSettings() {
   if ( !isOpen() ) 
     return;
 
@@ -145,7 +178,7 @@ void TKVScope::getFastFrameSettings() {
   memset(cmd,0,256);
   char buf[BUF_LEN];
   memset(buf,0,BUF_LEN);
-  sprintf( cmd, "HOR?");
+  sprintf( cmd, "HOR:FAST?");
   int ret = vxi11_send( m_clink, cmd );
   if ( ret<0 ) {
     std::cout << "Error sending: " << cmd << std::endl;
@@ -157,7 +190,6 @@ void TKVScope::getFastFrameSettings() {
       m_fastframeSettings = new TKVFastFrameSettings( buf );
     else
       m_fastframeSettings->updateParameters( buf );
-    //m_fastframeSettings->print();
   }
   else if ( bytes_ret==-15 ) 
     std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
