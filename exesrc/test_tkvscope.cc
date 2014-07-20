@@ -6,7 +6,11 @@
 #include "TKVDataSettings.hh"
 #include <iostream>
 
+#include "TApplication.h"
+
 int main( int narg, char** argv ) {
+
+  TApplication* app = new TApplication("app",0,0);
 
   TKVScopeManager* man = TKVScopeManager::getScopeManager();
   man->openDevice( "192.168.1.3" );
@@ -21,6 +25,7 @@ int main( int narg, char** argv ) {
     tek1->getChannelSettings(i)->print();
 
   tek1->setChannelToRecord( 1, true );
+  //tek1->setChannelToRecord( 2, true );
 
   tek1->readHorizontalSettings();
   tek1->getHorizontalSettings()->print();

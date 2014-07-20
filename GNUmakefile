@@ -16,11 +16,12 @@ CXXFLAGS += $(LOCAL_INC) -I$(VXIDIR)
 EXESRC = $(addprefix exesrc/, $(addsuffix $(EXES),.cc))
 EXEOBJ = $(addprefix .obj/,$(notdir $(EXESRC:.cc=.o)))
 EXEBIN = $(addprefix bin/,$(EXES))
-LOCAL_LIB += $(VXILIB)
+LOCAL_LIB += 
+STATIC_LIB += $(VXILIB) 
 ifeq ($(ENABLEROOT),1)
-CXXFLAGS += -DROOTENABLED
-LOCAL_INC += -I$(ROOTSYS)/include
-LOCAL_LIB += `root-config --libs`
+CXXFLAGS += -DROOTENABLED `root-config --cflags`
+LOCAL_LIB += `root-config --libs --glibs`
+#LDFLAGS += `root-config --ldflags`
 endif
 
 
@@ -32,7 +33,7 @@ lib: libtekvxi.so
 
 libtekvxi.so: $(COBJS)
 	echo "Making library"
-	$(GXX) -shared $(LDFLAGS) -o $@ $^
+	$(GXX) -shared $(LDFLAGS) -o $@ $^ $(LOCAL_LIB)
 .obj/%.o: src/%.cc
 	mkdir -p .obj
 	$(GXX) -c $(CXXFLAGS) -o $@ $^
@@ -41,10 +42,10 @@ libtekvxi.so: $(COBJS)
 	$(GXX) -c $(CXXFLAGS) -o $@ $^
 bin/%: .obj/%.o libtekvxi.so
 	mkdir -p bin
-	$(GXX) $(CXXFLAGS) -o $@ $^ $(LOCAL_LIB)
+	$(GXX) $(LDFLAGS) $^ $(LOCAL_LIB) $(STATIC_LIB) -o $@
 
 .DEFAULT: $(EXEBIN)
 
 clean:
-	rm -f .obj/*.o bin/*
+	rm -f .obj/*.o bin/* *.so
 

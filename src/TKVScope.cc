@@ -14,6 +14,7 @@
 #include "TKVDataSettings.hh"
 #include "TKVWaveformBuffer.hh"
 #include "TKVWaveformTree.hh"
+#include "TKVRootDisplay.hh"
 
 #ifdef ROOTENABLED
 #include "TFile.h"
@@ -149,6 +150,7 @@ void TKVScope::idn() {
   char buf[BUF_LEN];
   memset(buf,0,BUF_LEN);
   int err = query( "*IDN?", buf );
+  std::cout << buf << std::endl;
   return ;
 }
 
@@ -161,25 +163,53 @@ void TKVScope::readChannelSettings(int ch) {
     return;
   }
 
+  int err;
   char cmd[256];
-  memset(cmd,0,256);
+  char zch[10];
   char buf[BUF_LEN];
+  memset(cmd,0,256);
   memset(buf,0,BUF_LEN);
-  sprintf( cmd, "CH%d?", ch );
-  int ret = vxi11_send( m_clink, cmd );
-  if ( ret<0 ) {
-    std::cout << "Error sending: " << cmd << std::endl;
-    return;
-  }
-  long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
-  if ( bytes_ret>0 ) {
-    if ( m_channelSettings[ch-1]==NULL )
-      m_channelSettings[ch-1] = new TKVTekChannelSettings( ch, buf );
-    else
-      m_channelSettings[ch-1]->updateParameters( buf );
-  }
-  else if ( bytes_ret==-15 ) 
-    std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
+  sprintf( zch, "CH%d", ch );
+  std::string strch = zch;
+  
+  // bandwidth
+  TKVTekChannelSettings* chdata = new TKVTekChannelSettings( ch );
+  err = query( strch+":BAN?", buf );
+  chdata->bandwidth = std::atof( buf );
+
+  // coupling
+  err = query( strch+":COUP?", buf );
+  if ( strcmp( buf , "DC" )==0 )
+    chdata->coupling = TKVTekChannelSettings::DC;
+  else
+    chdata->coupling = TKVTekChannelSettings::AC;
+
+  // offset
+  err = query( strch+":OFFS?", buf );
+  chdata->offset = std::atof( buf );
+  
+  // position
+  err = query( strch+":POS?", buf );
+  chdata->position = std::atof( buf );
+
+  // scale
+  err = query( strch+":SCA?", buf );
+  chdata->scale = std::atof( buf );
+
+  // termination
+  err = query( strch+":TER?", buf );
+  chdata->termination = std::atof( buf );
+
+  // on
+  err = query( "SELect:"+strch+"?", buf );
+  chdata->state = std::atoi(buf);
+
+  m_channelSettings[ch-1] = chdata;
+  //   else
+  //     m_channelSettings[ch-1]->updateParameters( buf );
+  // }
+  // else if ( bytes_ret==-15 ) 
+  //   std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
   return ;  
 }
 
@@ -412,6 +442,8 @@ void TKVScope::acquireOneTrigger() {
   TFile* out = new TFile("testone.root", "RECREATE" );
   TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
   std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+  TKVRootDisplay* canvas = new TKVRootDisplay();
+  canvas->display( wfmtree, 0 );
   out->Write();
   delete out;
   //delete wfmtree;

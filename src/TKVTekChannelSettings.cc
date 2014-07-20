@@ -5,10 +5,9 @@
 #include <cmath>
 
 
-TKVTekChannelSettings::TKVTekChannelSettings(int chnumber, char* input ){
+TKVTekChannelSettings::TKVTekChannelSettings(int chnumber){
   chID = chnumber;
   setToRecord(false);
-  updateParameters( input );
 }
 
 TKVTekChannelSettings::~TKVTekChannelSettings() {
@@ -38,10 +37,6 @@ void TKVTekChannelSettings::updateParameters( char* input ) {
       scale = std::atof( pch );
     else if ( itoken==7 )
       termination = std::atof( pch );
-    else if ( itoken==9 )
-      gain = std::atof( pch );
-    else if ( itoken==11 )
-      units = std::string(pch);
     else if ( itoken>11 )
       break;
     itoken++;
@@ -56,16 +51,20 @@ void TKVTekChannelSettings::print() {
     scoupling = "DC";
   else
     scoupling = "AC";
+  std::string strstate;
+  if ( state==1 )
+    strstate = "ON";
+  else
+    strstate = "OFF";
 
   std::cout << "--------------------------" << std::endl;
   std::cout << " Channel " << chID << " Settings" << std::endl;
   std::cout << "--------- " << std::endl;
-  std::cout << " units: " << units << std::endl;
+  std::cout << " state: " << strstate << std::endl;
   std::cout << " coupling: " << scoupling << std::endl;
   std::cout << " scale: " << scale << " V/div" << std::endl;
   std::cout << " offset: " << offset << " V" << std::endl;
   std::cout << " cursor position: " << position << " y-axis divs" << std::endl;
-  std::cout << " gain: " << gain << std::endl;
   std::cout << " termination: " << termination << " Ohms" << std::endl;
   std::cout << "--------------------------" << std::endl;
 }

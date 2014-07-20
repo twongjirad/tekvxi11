@@ -9,7 +9,7 @@ class TKVTekChannelSettings {
   friend class TKVScope;
 
 public:
-  TKVTekChannelSettings( int chnumber, char* scope_output_string );
+  TKVTekChannelSettings( int chnumber );
   ~TKVTekChannelSettings();
 
   typedef enum { DC=0, AC } coupling_t;
@@ -27,8 +27,7 @@ protected:
   double position;
   double scale;
   double termination;
-  double gain;
-  std::string units;
+  int state;
 
 };
 
