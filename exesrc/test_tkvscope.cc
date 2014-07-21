@@ -26,6 +26,8 @@ int main( int narg, char** argv ) {
 
   tek1->setChannelToRecord( 1, true );
   //tek1->setChannelToRecord( 2, true );
+  //tek1->setChannelToRecord( 3, true );
+  //tek1->setChannelToRecord( 4, true );
 
   tek1->readHorizontalSettings();
   tek1->getHorizontalSettings()->print();
@@ -36,7 +38,10 @@ int main( int narg, char** argv ) {
   tek1->readDataSettings();
   tek1->getDataSettings()->print();
 
-  tek1->acquireOneTrigger();
+  //tek1->acquireOneTrigger();
+  tek1->acquireFastFrame( 500, 200 );
+  tek1->getFastFrameSettings()->print();
+  tek1->getDataSettings()->print();
 
   std::cout << "Finished." << std::endl;
   std::cin.get();

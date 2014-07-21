@@ -8,7 +8,7 @@
 #include <string>
 #include "vxi11_user.h"
 
-#define BUF_LEN 100000
+#define BUF_LEN 200000
 #define DATA_BUF_LEN 10000000
 #define MAX_CHANNELS 4
 
@@ -34,8 +34,10 @@ public:
   void readChannelSettings(int ch);
   void readHorizontalSettings();
   void readFastFrameSettings();
+  void writeFastFrameSettings();
   void readDataSettings();
   void acquireOneTrigger();
+  void acquireFastFrame( int nsamples, int nframes );
 
   TKVTekChannelSettings* getChannelSettings(int ch);
   TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
@@ -46,7 +48,7 @@ protected:
 
   CLINK* open_device( std::string ipaddress );
   CLINK* get_clink();
-  int query( std::string string, char* buff );
+  int query( std::string string, char* buff, long buflen=BUF_LEN );
   int sendcmd( std::string command );
   void waitforscope();
 

@@ -1,6 +1,7 @@
 #ifndef __TKVRootDisplay__
 #define __TKVRootDisplay__
 
+#include <string>
 #ifdef ROOTENABLED
 class TCanvas;
 class TGraph;
@@ -17,6 +18,7 @@ public:
   int lastwfm;
   int nchannels;
   void display( TKVWaveformTree* wfmdata, int wfm_num=-1 );
+  bool isnumber( std::string s );
 
 #ifdef ROOTENABLED
   TCanvas* canvas;

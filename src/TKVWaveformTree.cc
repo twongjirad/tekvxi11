@@ -93,7 +93,7 @@ int TKVWaveformTree::appendWaveforms( TKVWaveformBuffer** waveforms ) {
       }
     }
     waveformdata->Fill();
-
+    iwfms++;
   }
   return waveformdata->GetEntries();
 #else

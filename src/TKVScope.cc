@@ -93,13 +93,13 @@ void TKVScope::setChannelToRecord( int ch, bool record ) {
    SCOPE INTERFACE COMMANDS
    ------------------------------------------ */
 
-int TKVScope::query( std::string command, char* buf ) {
+int TKVScope::query( std::string command, char* buf, long buflen ) {
   int ret = vxi11_send( m_clink, command.c_str() );
   if ( ret<0 ) {
     std::cout << "Error sending " << command << std::endl;
     return -1;
   }
-  long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
+  long bytes_ret = vxi11_receive( m_clink, buf, buflen );
   if ( bytes_ret>0 ) {
     return 0;
   }
@@ -375,6 +375,33 @@ void TKVScope::readDataSettings() {
   m_dataSettings = data;
 }
 
+void TKVScope::writeFastFrameSettings() {
+  if ( !isOpen() ) 
+    return;
+  
+  if ( m_fastframeSettings==NULL ) {
+    std::cout << "fast frame settings haven't been created." << std::endl;
+    return;
+  }
+
+  int err;
+  char command[50];
+  char buf[BUF_LEN];
+
+  // Number of samples
+  sprintf( command, "HOR:FAST:LEN %d", m_fastframeSettings->framelength );
+  err = sendcmd( command );
+  
+  // Number of fast frames
+  sprintf( command, "HOR:FAST:COUN %d", m_fastframeSettings->numframes );
+  err = sendcmd( command );
+  
+  return ;  
+}
+
+/* ---------------------------------------------
+   Acquisition Routines
+   ------------------------------------------- */
 
 void TKVScope::acquireOneTrigger() {
   int err = 0;
@@ -428,7 +455,7 @@ void TKVScope::acquireOneTrigger() {
       sprintf(command, "DATa:SOUrce CH%d", ch+1 );
       err = sendcmd( command );
 
-      err = query("CURVe?", databuffer );
+      err = query("CURVe?", databuffer, DATA_BUF_LEN );
       waitforscope();
 
       waveforms[ch]->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
@@ -450,3 +477,74 @@ void TKVScope::acquireOneTrigger() {
 #endif
 
 }
+
+void TKVScope::acquireFastFrame( int nsamples, int nframes ) {
+
+  if ( !m_fastframeSettings )
+    readFastFrameSettings();
+
+  int err;
+ 
+  m_fastframeSettings->activated = true;
+  m_fastframeSettings->numframes = nframes;
+  m_fastframeSettings->framelength = nsamples;
+
+  // push settings onto scope
+  writeFastFrameSettings();
+
+  // Set Fast Frame to be ON
+  err = sendcmd( "HOR:FAST:STATE ON" );
+
+  // Set encoding
+  err = sendcmd( "DATa:ENCg RIBinary" );
+  if ( err!=0 ) assert(false);
+
+  // Tell scope to enter into single sequence mode
+  err = sendcmd( "ACQuire:STOPAfter SEQuence" );
+  if ( err!=0 ) assert(false);
+
+  // Acquire!
+  std::cout << "Staring single acquisition" << std::endl;
+  err = sendcmd( "ACQ:STATE RUN" );
+  if ( err!=0 ) assert(false);
+
+  waitforscope();
+
+  // Sync the scope settings
+  readDataSettings();
+  readFastFrameSettings();
+
+    // Grab the traces
+  char* databuffer = new char[DATA_BUF_LEN];
+  TKVWaveformBuffer** waveforms = new TKVWaveformBuffer*[MAX_CHANNELS];
+  for (int ch=0; ch<MAX_CHANNELS; ch++) {
+    if ( m_channelSettings[ch]->record ) {
+      waveforms[ch] = new TKVWaveformBuffer();
+      char command[50];
+      sprintf(command, "DATa:SOUrce CH%d", ch+1 );
+      err = sendcmd( command );
+
+      err = query("CURVe?", databuffer );
+      waitforscope();
+
+      waveforms[ch]->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+    }
+    else
+      waveforms[ch] = NULL;
+  }
+
+#ifdef ROOTENABLED
+  // Convert raw data to ROOT TTree format
+  TFile* out = new TFile("testsinglefastframe.root", "RECREATE" );
+  TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
+  std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+  TKVRootDisplay* canvas = new TKVRootDisplay();
+  canvas->display( wfmtree, 0 );
+  out->Write();
+  delete out;
+  //delete wfmtree;
+#endif
+
+}
+
+
