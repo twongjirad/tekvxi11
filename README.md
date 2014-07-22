@@ -45,7 +45,7 @@ Once the scopes finishing recording their traces, the waveforms are transferred 
 The scopes are once again armed, and then triggered together.  
 Repeating this sequence allows the scopes to stay in sync.
 
-The program was written with the following network configuration in mind:
+The program was written with the following network configuration in mind (diagram actually look like somtehing in text editors):
          [router]
 	     |
   ---------------------------------------------- ...
@@ -59,4 +59,3 @@ The program was written with the following network configuration in mind:
   |                             |          |
   |                             |          |
 [meaurement instruments]------------------------- ...
-
