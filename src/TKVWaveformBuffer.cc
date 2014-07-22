@@ -25,13 +25,16 @@ TKVWaveformBuffer::~TKVWaveformBuffer() {
 
 
 void TKVWaveformBuffer::configureMemBlock( int samples, int frames ) {
+  if ( allocated==true )
+    destroyMemBlock();
+
   nframes = frames;
   nsamples = samples;
 
-  adc = new double*[nframes];
+  adc = new int*[nframes];
   volts = new double*[nframes];
   for ( int i=0; i<nframes; i++ ) {
-    adc[i] = new double[nsamples];
+    adc[i] = new int[nsamples];
     volts[i] = new double[nsamples];
   }
   t = new double[nsamples];
@@ -54,8 +57,15 @@ void TKVWaveformBuffer::destroyMemBlock() {
   nsamples = 0;
 }
 
-void TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff, TKVDataSettings* data ) {
-  if ( data->nsamples!=nsamples || data->framesinbuffer!=nframes || !allocated) {
+int TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff, TKVDataSettings* data ) {
+  //if ( data->nsamples!=nsamples || data->framesinbuffer!=nframes || !allocated) {
+  //  configureMemBlock( data->nsamples, data->framesinbuffer );
+  //}
+  // if ( ff->framelength!=nsamples || ff->numframes!=nframes || !allocated) {
+  //   // if the data format configuration has changed, we reconfigure the memory block
+  //   configureMemBlock( ff->framelength, ff->numframes );
+  // }
+  if ( data->nsamples!=nsamples || ff->numframes!=nframes || !allocated) {
     // if the data format configuration has changed, we reconfigure the memory block
     configureMemBlock( data->nsamples, ff->numframes );
   }
@@ -82,21 +92,24 @@ void TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff,
     short wordbytes = data->bytesperword;
     long ndelivered = databytes/(wordbytes*nsamples); // what's in the buffer might be different than what was asked for
     char tracebuffer[nsamples*wordbytes+1]; // buffer for one waveform
-    char tracepoint[wordbytes+1];
+    char tracepoint[wordbytes];
+    //char tracepoint[sizeof(int)];
 
-    // std::cout << "Parsing data!" << std::endl;
-    // std::cout << "bytes per word: " << wordbytes << std::endl;
-    // std::cout << "ndelivered: " << ndelivered << std::endl;
-    // std::cout << "nframes: " << nframes << std::endl;
-    // std::cout << "nsamples: " << nsamples << " per trace" << std::endl;
-    // std::cout << "x=" << x << std::endl;
-    // std::cout << "y=" << databytes << " total bytes of data" << std::endl;
+    std::cout << "**** Parsing " << ndelivered << " delivered waveform(s) ****" << std::endl;
+    nstored = ndelivered;
+
+    std::cout << "Parsing data!" << std::endl;
+    std::cout << "bytes per word: " << wordbytes << std::endl;
+    std::cout << "ndelivered: " << ndelivered << std::endl;
+    std::cout << "nframes: " << nframes << std::endl;
+    std::cout << "nsamples: " << nsamples << " per trace" << std::endl;
+    std::cout << "x=" << x << std::endl;
+    std::cout << "y=" << databytes << " total bytes of data" << std::endl;
     // std::cout << "bytes in char*: " << sizeof(char*) << std::endl;
     // std::cout << "bytes in char: " << sizeof(char) << std::endl;
+    std::cout << "bytes in int: " << sizeof(int) << std::endl;
+    int complement = 1 << 8;
 
-    std::cout << "Parsing " << ndelivered << " delivered waveform(s) ..." << std::endl;
-    nstored = ndelivered;
-    
     for ( long iframe=0; iframe<ndelivered; iframe++ ) {
       //std::cout << "Frame " << iframe+1 << " of " << ndelivered << std::endl;
       int framepos = nsamples*wordbytes*iframe;
@@ -105,21 +118,72 @@ void TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff,
 	      buff+(2+x+framepos),
 	      sizeof(char)*nsamples*wordbytes );
       for (int isample=0; isample<nsamples; isample++) {
+	//memset( tracepoint, 0, sizeof(int) );
+	//memcpy( tracepoint+(sizeof(int)-wordbytes), tracebuffer+(wordbytes*isample), sizeof(char)*wordbytes );
 	memcpy( tracepoint, tracebuffer+(wordbytes*isample), sizeof(char)*wordbytes );
-	tracepoint[wordbytes]='\0';
-	adc[iframe][isample] = int( *tracepoint ); // is this machine invariant?
+
+	// adc[iframe][isample] = int(*tracepoint);
+	// if ( adc[iframe][isample]<0 )
+	//   adc[iframe][isample] += complement;
+
+	int rawlow = int(tracepoint[0]);
+	int lowbyte;
+	if ( rawlow>0 )
+	  lowbyte = rawlow;
+	else {
+	  lowbyte = complement+rawlow;
+	}
+	int highbyte = 0;
+	if ( wordbytes>1 ) {
+	  highbyte = int(tracepoint[1]);
+	}
+	adc[iframe][isample] = highbyte+lowbyte;
+
 	volts[iframe][isample] = data->voltsperadc*double(adc[iframe][isample]-data->adcoffset);
+	// if ( wordbytes>0 ) {
+	//   std::cout << "rawlow=" << rawlow << " low=" << lowbyte 
+	// 	    << " high=" << highbyte 
+	// 	    << " adc=" << adc[iframe][isample] 
+	// 	    << " v=" << volts[iframe][isample] 
+	// 	    << " offset=" << data->adcoffset 
+	// 	    << " compl=" << complement
+	// 	    << std::endl;
+	//   //std::cout << adc[iframe][isample] << " ";
+	//   std::cin.get();
+	// }
+	// volts[iframe][isample] = double(adc[iframe][isample]-data->adcoffset);
 	//std::cout << "Sample [" << iframe << ":" << isample << "] " << adc[iframe][isample] << std::endl;
 	//std::cout << adc[iframe][isample] << " ";
 	//std::cout << volts[iframe][isample] << " ";
       }
       //std::cout << std::endl;
-      //std::cin.get();
+      //std::cout << std::endl;
     }
-
+    //std::cin.get();
   }
   else if ( data->mode=="ASCII" ) {
-    assert(false);
+    //std::cout << "ASCII: " << buff << std::endl;
+    char* pch = strtok( buff, ",\n");
+    int samtot = 0;
+    int isample=0;
+    int iframe=0;
+    while ( pch!=NULL ) {
+      adc[iframe][isample] = std::atoi(pch);
+      volts[iframe][isample] = data->voltsperadc*double(adc[iframe][isample]-data->adcoffset);
+      //std::cout << adc[iframe][isample] << " ";
+      //std::cout << volts[iframe][isample] << " ";
+      isample++;
+      samtot++;
+      if ( isample==nsamples ) {
+	isample=0;
+	iframe++;
+      }
+      pch = strtok( NULL, ",\n");
+    }
+    std::cout << std::endl;
+    std::cout << "Parsed " << iframe << " waveforms (" << samtot << " samples total)" << std::endl;
+    nstored = iframe;
+    //std::cin.get();
   }
   else {
     assert(false);
@@ -130,4 +194,6 @@ void TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff,
     t[isample] = isample*data->secspertdc;
   }
 
+  return nstored;
+  
 }

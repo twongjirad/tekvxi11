@@ -38,6 +38,7 @@ TKVScope::TKVScope( std::string ipaddress ) {
   memset( m_channelSettings, 0, MAX_CHANNELS );
   m_horizontalSettings = NULL;
   m_fastframeSettings = NULL;
+  m_dataSettings = NULL;
   m_channelBuffers = new TKVWaveformBufferCollection( ipaddress );
 
 }
@@ -96,12 +97,14 @@ void TKVScope::setChannelToRecord( int ch, bool record ) {
    SCOPE INTERFACE COMMANDS
    ------------------------------------------ */
 
-int TKVScope::query( std::string command, char* buf, long buflen ) {
+int TKVScope::query( std::string command, char* buf, long buflen, int pause ) {
   int ret = vxi11_send( m_clink, command.c_str() );
   if ( ret<0 ) {
     std::cout << "Error sending " << command << std::endl;
     return -1;
   }
+  if ( pause>0 )
+    sleep( pause );
   long bytes_ret = vxi11_receive( m_clink, buf, buflen );
   if ( bytes_ret>0 ) {
     return 0;
@@ -136,7 +139,7 @@ void TKVScope::waitforscope() {
   char buf[BUF_LEN];
   while ( acqdone==false && sec_elapsed<3600 ) {
     //std::this_thread::sleep_for( std::chrono::seconds(1.0) );
-    //sleep(1);
+    //sleep(5);
     usleep( 250000 ); // 250 milliseconds
     err = query( "*OPC?", buf );
     if ( err!=0 ) assert(false);
@@ -264,25 +267,31 @@ void TKVScope::readFastFrameSettings() {
   if ( !isOpen() ) 
     return;
 
+  int err = 0;
   char cmd[256];
   memset(cmd,0,256);
   char buf[BUF_LEN];
   memset(buf,0,BUF_LEN);
-  sprintf( cmd, "HOR:FAST?");
-  int ret = vxi11_send( m_clink, cmd );
-  if ( ret<0 ) {
-    std::cout << "Error sending: " << cmd << std::endl;
-    return;
-  }
-  long bytes_ret = vxi11_receive( m_clink, buf, BUF_LEN );
-  if ( bytes_ret>0 ) {
-    if ( m_fastframeSettings==NULL )
-      m_fastframeSettings = new TKVFastFrameSettings( buf );
-    else
-      m_fastframeSettings->updateParameters( buf );
-  }
-  else if ( bytes_ret==-15 ) 
-    std::cout << "Sent " << cmd << " *** [ NO RESPONSE ] ***" << std::endl;
+
+  if ( !m_fastframeSettings )
+    m_fastframeSettings = new TKVFastFrameSettings;
+  TKVFastFrameSettings* ff = m_fastframeSettings;  
+
+  // State
+  err = query( "HOR:FAST:STATE?", buf );
+  if ( std::string(buf)=="ON" )
+    ff->activated = true;
+  else
+    ff->activated = false;
+
+  // Frame length
+  err = query( "HOR:FAST:LEN?", buf );
+  ff->framelength = std::atoi(buf);
+  
+  // Number of frames
+  err = query( "HOR:FAST:COUN?",buf);
+  ff->numframes = std::atoi(buf);
+
   return ;  
 }
 
@@ -296,10 +305,14 @@ void TKVScope::readDataSettings() {
   int err;
 
   bool success = true;
-  TKVDataSettings* data = new TKVDataSettings();
+  TKVDataSettings* data;
+  if ( !m_dataSettings )
+    data = new TKVDataSettings();
+  else
+    data = m_dataSettings;
 
   // Volts per ADC
-  err = query( "WFMPre:YMUlt?", buf );
+  err = query( "WFMOutpre:YMUlt?", buf );
   if ( err<0 ) {
     delete data;
     return;
@@ -310,7 +323,7 @@ void TKVScope::readDataSettings() {
 
   // ADC Offset
   memset(buf,0,BUF_LEN);
-  err = query("WFMPre:YOFf?",buf);
+  err = query("WFMOutpre:YOFf?",buf);
   if ( err<0 ) {
     delete data;
     return;
@@ -321,7 +334,7 @@ void TKVScope::readDataSettings() {
 
   // Bytes per word (or point)
   memset(buf,0,BUF_LEN);
-  err = query("WFMPre:BYT_Nr?",buf);
+  err = query("WFMOutpre:BYT_Nr?",buf);
   if ( err<0 ) {
     delete data;
     return;
@@ -330,15 +343,26 @@ void TKVScope::readDataSettings() {
     data->bytesperword = std::atoi( buf );
   }
 
-  // Bytes per word (or point)
+  // Samples per frame
   memset(buf,0,BUF_LEN);
-  err = query("WFMPre:NR_Pt?",buf);
+  err = query("WFMOutpre:NR_Pt?",buf);
   if ( err<0 ) {
     delete data;
     return;
   }
   else {
     data->nsamples = std::atoi( buf );
+  }
+
+  // Number of frames
+  memset(buf,0,BUF_LEN);
+  err = query("WFMOutpre:NR_Fr?",buf);
+  if ( err<0 ) {
+    delete data;
+    return;
+  }
+  else {
+    data->nframes = std::atoi( buf );
   }
 
   // Data mode
@@ -402,48 +426,123 @@ void TKVScope::writeFastFrameSettings() {
   return ;  
 }
 
-void TKVScope::collectWaveforms() {
+void TKVScope::writeDataSettings() {
+
+  if ( !isOpen() ) 
+    return;
+
+  char cmd[100];
+  memset(cmd,0,100);
+  int err;
+
+  bool success = true;
+  TKVDataSettings* data = m_dataSettings;
+
+  // // Bytes per word (or point)
+  // memset(buf,0,BUF_LEN);
+  // err = query("WFMOutpre:BYT_Nr?",buf);
+  // if ( err<0 ) {
+  //   delete data;
+  //   return;
+  // }
+  // else {
+  //   data->bytesperword = std::atoi( buf );
+  // }
+
+  // Samples per frame
+  sprintf( cmd, "WFMOutpre:NR_Pt %d", data->nsamples );
+  err = sendcmd( cmd );
+
+  // Samples per frame
+  sprintf( cmd, "WFMOutpre:BYT_Nr %d", 4 );
+  err = sendcmd( cmd );
+
+}
+
+int TKVScope::collectWaveforms() {
 
   // Wait for scope to be free
   waitforscope();
 
-  // Sync the scope settings
-  readDataSettings();
+  // Sync the scope settings:
+  // (1) read the fast frame parameters and horizontal settings
   readFastFrameSettings();
+  readHorizontalSettings();
+  // (2) transfer length of sample to data settings
+  if ( m_fastframeSettings->activated )
+    m_dataSettings->nsamples = m_fastframeSettings->framelength;
+  else
+    m_dataSettings->nsamples = m_horizontalSettings->recordlength;
   
   // Grab the traces
   int err = 0;
+  int ntraces = 0;
   char* databuffer = new char[DATA_BUF_LEN];
   for (int ch=0; ch<MAX_CHANNELS; ch++) {
     if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
       m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
     if ( m_channelSettings[ch]->willRecord() ) {
       TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
-      char command[50];
+      char command[100];
       sprintf(command, "DATa:SOUrce CH%d", ch+1 );
       err = sendcmd( command );
+
+      // sprintf(command, "WFMOutpre:BYT_Nr 2");
+      // err = sendcmd( command );
+
+      //err = sendcmd( "DATa:ENCdg ASCII");
+
+      //sprintf(command, "DATa:ENCdg RIBinary");
+      err = sendcmd( "DATa:ENCdg RPBinary");
+      
+      // err = sendcmd( "WFMOutpre:BN_Fmt RI" );
+      
+      err = sendcmd( "WFMOutpre:BYT_Nr 1" );
+      
+      //err = sendcmd( "WFMOutpre:BYT_Or MSB" );
+
+      sprintf(command, "DATa:STARt 1");
+      err = sendcmd( command );
+
+      //sprintf(command, "DATa:STOP %d", m_fastframeSettings->framelength);
+      sprintf(command, "DATa:STOP %d", m_dataSettings->nsamples );
+      err = sendcmd( command );
+
+      readDataSettings();
       
       err = query("CURVe?", databuffer, DATA_BUF_LEN );
-      waitforscope();
-      
-      waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+      //waitforscope();
+      ntraces = waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
     }
   }
   delete databuffer;
+  return ntraces;
 }
 
 /* ---------------------------------------------
    Acquisition Routines
    ------------------------------------------- */
 
-void TKVScope::acquireOneTrigger() {
+void TKVScope::acquireOneTrigger( int nsamples_per_trace ) {
   int err = 0;
+  char command[100];
+
   // Turn off Fast Frame
   err = sendcmd( "HOR:FAST:STATE 0" );
   if ( err!=0 ) assert(false);
 
   // Set encoding
-  err = sendcmd( "DATa:ENCg RIBinary" );
+  err = sendcmd( "DATa:ENCdg RPBinary" );
+  if ( err!=0 ) assert(false);
+
+  // err = sendcmd( "DATa:ENCdg ASCII" );
+  // if ( err!=0 ) assert(false);
+
+  err = sendcmd( "WFMOutpre:BYT_Nr 1" );
+  if ( err!=0 ) assert(false);
+
+  sprintf( command, "ACQ:NUMSAM %d", nsamples_per_trace );
+  err = sendcmd( command );
   if ( err!=0 ) assert(false);
 
   // Tell scope to enter into single sequence mode
@@ -455,65 +554,65 @@ void TKVScope::acquireOneTrigger() {
   err = sendcmd( "ACQ:STATE RUN" );
   if ( err!=0 ) assert(false);
 
-  clock_t init, final;
-  init = clock();
-  double sec_elapsed = 0;
-  bool acqdone = false;
-  char buf[BUF_LEN];
-  while ( acqdone==false && sec_elapsed<3600 ) {
-    //std::this_thread::sleep_for( std::chrono::seconds(1.0) );
-    //sleep(1);
-    usleep( 250000 ); // 250 milliseconds
-    err = query( "*OPC?", buf );
-    if ( err!=0 ) assert(false);
-    final = clock()-init;
-    sec_elapsed = (double)final/(double)CLOCKS_PER_SEC;
-    std::cout << "*OPC? check after " << sec_elapsed << ": " << buf << std::endl;
-    if ( std::atoi(buf)==1 ) {
-      acqdone=true;
-    }
-  }
+//   clock_t init, final;
+//   init = clock();
+//   double sec_elapsed = 0;
+//   bool acqdone = false;
+//   char buf[BUF_LEN];
+//   while ( acqdone==false && sec_elapsed<3600 ) {
+//     //std::this_thread::sleep_for( std::chrono::seconds(1.0) );
+//     //sleep(1);
+//     usleep( 250000 ); // 250 milliseconds
+//     err = query( "*OPC?", buf );
+//     if ( err!=0 ) assert(false);
+//     final = clock()-init;
+//     sec_elapsed = (double)final/(double)CLOCKS_PER_SEC;
+//     std::cout << "*OPC? check after " << sec_elapsed << ": " << buf << std::endl;
+//     if ( std::atoi(buf)==1 ) {
+//       acqdone=true;
+//     }
+//   }
 
-  // Sync the scope settings
-  readDataSettings();
-  readFastFrameSettings();
+//   // Sync the scope settings
+//   readDataSettings();
+//   readFastFrameSettings();
   
-  // Grab the traces
-  char* databuffer = new char[DATA_BUF_LEN];
-  for (int ch=0; ch<MAX_CHANNELS; ch++) {
-    if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
-      m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
-    if ( m_channelSettings[ch]->willRecord() ) {
-      TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
-      char command[50];
-      sprintf(command, "DATa:SOUrce CH%d", ch+1 );
-      err = sendcmd( command );
+//   // Grab the traces
+//   char* databuffer = new char[DATA_BUF_LEN];
+//   for (int ch=0; ch<MAX_CHANNELS; ch++) {
+//     if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
+//       m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
+//     if ( m_channelSettings[ch]->willRecord() ) {
+//       TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
+//       char command[50];
+//       sprintf(command, "DATa:SOUrce CH%d", ch+1 );
+//       err = sendcmd( command );
       
-      err = query("CURVe?", databuffer, DATA_BUF_LEN );
-      waitforscope();
+//       err = query("CURVe?", databuffer, DATA_BUF_LEN );
+//       waitforscope();
       
-      waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
-    }
-  }
-  delete databuffer;
-// #ifdef ROOTENABLED
-//   // Convert raw data to ROOT TTree format
-//   TFile* out = new TFile("testone.root", "RECREATE" );
-//   TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
-//   std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
-//   TKVRootDisplay* canvas = new TKVRootDisplay();
-//   canvas->display( wfmtree, 0 );
-//   out->Write();
-//   delete out;
-//   //delete wfmtree;
-// #endif
+//       waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+//     }
+//   }
+//   delete databuffer;
+// // #ifdef ROOTENABLED
+// //   // Convert raw data to ROOT TTree format
+// //   TFile* out = new TFile("testone.root", "RECREATE" );
+// //   TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
+// //   std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+// //   TKVRootDisplay* canvas = new TKVRootDisplay();
+// //   canvas->display( wfmtree, 0 );
+// //   out->Write();
+// //   delete out;
+// //   //delete wfmtree;
+// // #endif
 
 }
 
 void TKVScope::acquireFastFrame( int nsamples, int nframes ) {
 
   if ( !m_fastframeSettings )
-    readFastFrameSettings();
+    m_fastframeSettings = new TKVFastFrameSettings();
 
   int err;
  
@@ -524,12 +623,32 @@ void TKVScope::acquireFastFrame( int nsamples, int nframes ) {
   // push settings onto scope
   writeFastFrameSettings();
 
+  // turn off fast acquisition
+  err = sendcmd( "FASTA:STATE OFF" );
+
   // Set Fast Frame to be ON
   err = sendcmd( "HOR:FAST:STATE ON" );
 
+  writeFastFrameSettings();
+  readFastFrameSettings();
+  std::cout << "*** FAST FRAME CHECK ***" << std::endl;
+  m_fastframeSettings->print();
+
   // Set encoding
-  err = sendcmd( "DATa:ENCg RIBinary" );
+  // err = sendcmd( "DATa:ENCdg ASCII" );
+  // if ( err!=0 ) assert(false);
+
+  err = sendcmd( "DATa:ENCdg RPBinary" );
   if ( err!=0 ) assert(false);
+
+  // err = sendcmd( "WFMOutpre:BN_Fmt RI" );
+  // if ( err!=0 ) assert(false);
+
+  err = sendcmd( "WFMOutpre:BYT_Nr 1" );
+  if ( err!=0 ) assert(false);
+
+  // err = sendcmd( "WFMOutpre:BYT_OR MSB" );
+  // if ( err!=0 ) assert(false);
 
   // Tell scope to enter into single sequence mode
   err = sendcmd( "ACQuire:STOPAfter SEQuence" );

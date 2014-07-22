@@ -2,6 +2,7 @@
 #define __TKVWaveformTree__
 
 class TKVWaveformBuffer;
+class TKVWaveformBufferCollection;
 #ifdef ROOTENABLED
 class TTree;
 #endif
@@ -9,7 +10,7 @@ class TTree;
 class TKVWaveformTree {
 
 public:
-  TKVWaveformTree( TKVWaveformBuffer** waveforms, int numchannels );
+  TKVWaveformTree( TKVWaveformBufferCollection* waveforms, int numchannels );
   ~TKVWaveformTree();
   int entries();
 
@@ -27,7 +28,7 @@ public:
   double** waveforms_array; // [numchannels][sample array]
 
 public:
-  int appendWaveforms( TKVWaveformBuffer** waveforms );
+  int appendWaveforms( TKVWaveformBufferCollection* waveforms );
 
 };
 

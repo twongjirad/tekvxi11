@@ -36,22 +36,24 @@ public:
   void readChannelSettings(int ch);
   void readHorizontalSettings();
   void readFastFrameSettings();
-  void writeFastFrameSettings();
   void readDataSettings();
-  void acquireOneTrigger();
+  void writeFastFrameSettings();
+  void writeDataSettings();
+  void acquireOneTrigger( int nsamples );
   void acquireFastFrame( int nsamples, int nframes );
-  void collectWaveforms();
+  int collectWaveforms();
 
   TKVTekChannelSettings* getChannelSettings(int ch);
   TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
   TKVFastFrameSettings* getFastFrameSettings() { return m_fastframeSettings; };
   TKVDataSettings* getDataSettings() { return m_dataSettings; };
+  TKVWaveformBufferCollection* getChannelBuffers() { return m_channelBuffers; };
 
 protected:
 
   CLINK* open_device( std::string ipaddress );
   CLINK* get_clink();
-  int query( std::string string, char* buff, long buflen=BUF_LEN );
+  int query( std::string string, char* buff, long buflen=BUF_LEN, int pause=0 );
   int sendcmd( std::string command );
   void waitforscope();
 

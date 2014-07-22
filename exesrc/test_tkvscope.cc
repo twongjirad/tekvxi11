@@ -40,7 +40,7 @@ int main( int narg, char** argv ) {
   tek1->readDataSettings();
   tek1->getDataSettings()->print();
 
-  tek1->acquireOneTrigger();
+  tek1->acquireOneTrigger( 10000 );
   //tek1->acquireFastFrame( 10000, 20 );
   //tek1->getFastFrameSettings()->print();
   //tek1->getDataSettings()->print();

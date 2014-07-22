@@ -24,7 +24,8 @@ protected:
   double secspertdc;
   int adcoffset;
   int framesinbuffer;
-  double nsamples;
+  int nsamples;
+  int nframes;
   std::string mode;
 
 

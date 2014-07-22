@@ -1,11 +1,12 @@
 #include "TKVWaveformTree.hh"
 
 #include "TKVWaveformBuffer.hh"
+#include "TKVWaveformBufferCollection.hh"
 #ifdef ROOTENABLED
 #include "TTree.h"
 #endif
 
-TKVWaveformTree::TKVWaveformTree( TKVWaveformBuffer** waveforms, int maxchannels ) {
+TKVWaveformTree::TKVWaveformTree( TKVWaveformBufferCollection* waveforms, int maxchannels ) {
 
   char branchinfo[100];
   char branchname[100];
@@ -29,8 +30,8 @@ TKVWaveformTree::TKVWaveformTree( TKVWaveformBuffer** waveforms, int maxchannels
   // Get channel information
   bool atleastone = false;
   for (int i=0; i<maxchannels; i++) {
-    TKVWaveformBuffer* ch_wfm = waveforms[i];
-    if ( ch_wfm!=NULL ) {
+    TKVWaveformBuffer* ch_wfm = waveforms->getChannelBuffer(i);
+    if ( ch_wfm->isallocated() ) {
       atleastone = true;
       activechannels[i] = 1;
       samples_per_waveform = ch_wfm->nsamples;
@@ -76,7 +77,7 @@ TKVWaveformTree::~TKVWaveformTree() {
   
 }
 
-int TKVWaveformTree::appendWaveforms( TKVWaveformBuffer** waveforms ) {
+int TKVWaveformTree::appendWaveforms( TKVWaveformBufferCollection* waveforms ) {
 #ifdef ROOTENABLED
   int iwfms = 0;
   bool morewfms = true;
@@ -85,7 +86,7 @@ int TKVWaveformTree::appendWaveforms( TKVWaveformBuffer** waveforms ) {
 
     for (int ch=0; ch<numchannels; ch++) {
       if ( activechannels[ch]==1 ) {
-	TKVWaveformBuffer* ch_wfm = waveforms[ch];
+	TKVWaveformBuffer* ch_wfm = waveforms->getChannelBuffer(ch);
 	if ( iwfms<ch_wfm->nstored )
 	  memcpy( waveforms_array[ch], ch_wfm->volts[iwfms], sizeof(double)*ch_wfm->nsamples );
 	if ( iwfms+1<ch_wfm->nstored )

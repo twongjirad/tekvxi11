@@ -8,6 +8,8 @@
 #include "TKVTekHorizontalSettings.hh"
 #include "TKVDataSettings.hh"
 #include "TKVArduinoTrigger.hh"
+#include "TKVWaveformTree.hh"
+#include "TKVRootDisplay.hh"
 
 #include "TApplication.h"
 
@@ -23,20 +25,21 @@ int main( int narg, char** argv ) {
   output_filenames[0]="output_wfms_tektds";
   output_filenames[1]="output_wfms_tekdpo";
   std::string ips[NUMSCOPES];
-  ips[0] = "192.168.1.3";   //TDS5054
-  ips[1] = "192.168.1.101"; //DPO5054
+  ips[0] = "192.168.1.101";   //TDS5054
+  ips[1] = "192.168.1.3"; //DPO5054
   bool record_channel[2][4] = { {true,false,false,false},
 				{false,true,false,false} };
   int ntottraces = 100;
-  int nframes = 1;
-  int nsamples_per_trace = 10000;
+  int nframes = 10;
+  int nsamples_per_trace = 5000;
   bool use_fastframe = true;
-  bool run_display = true;
+  bool run_display = false;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };
   int output_format = ROOTOUT;
   // --------------------------------------------------------------------------
 
   TKVScope* tek[NUMSCOPES];
+  TKVRootDisplay* display[NUMSCOPES];
   long tot_acquired[NUMSCOPES] = {0, 0};
 
   std::cout << "Loading scopes.." << std::endl;
@@ -49,6 +52,7 @@ int main( int narg, char** argv ) {
     for (int ch=1; ch<=MAXCH; ch++) {
       tek[i]->readChannelSettings( ch );
       tek[i]->setChannelToRecord( ch, true );
+      tek[i]->getChannelSettings(ch)->print();
     }
     tek[i]->readHorizontalSettings();
     tek[i]->readFastFrameSettings();
@@ -68,6 +72,7 @@ int main( int narg, char** argv ) {
     //   break;
     // };
 
+    display[i] =  new TKVRootDisplay( ips[i] );
   }    
 
   std::cout << "Loading Arduino Trigger..." << std::endl;
@@ -83,6 +88,8 @@ int main( int narg, char** argv ) {
   std::cout << "Staring acquisition loop ...." << std::endl;
 
   bool finished = false;
+  int totwaveforms = 0;
+
   while ( !finished ) {
 
     // acquisition loop.
@@ -96,6 +103,8 @@ int main( int narg, char** argv ) {
     for (int i=0; i<NUMSCOPES; i++) {
       if ( use_fastframe )
     	tek[i]->acquireFastFrame( nsamples_per_trace, nframes );
+      else
+	tek[i]->acquireOneTrigger( nsamples_per_trace );
     }
 
     // stop veto of triggers
@@ -106,27 +115,45 @@ int main( int narg, char** argv ) {
 
 
     std::cout << "Collecting buffers ... " << std::endl;
+    int nwaveforms = 0;
     // collect buffers
     for (int i=0; i<NUMSCOPES; i++) {
-      tek[i]->collectWaveforms();
+      nwaveforms = tek[i]->collectWaveforms();
     }
 
-    //if ( run_display ) {
-      // how to do this.
-    // }
+
+    // arm scopes
+    for (int i=0; i<NUMSCOPES; i++) {
+      // for (int ch=1; ch<=MAXCH; ch++)
+      // 	if ( tek[i]->getChannelSettings(ch)->willRecord() )
+      // 	  tek[i]->getChannelSettings(ch)->print();
+      std::cout << "Settings for " << ips[i] << std::endl;
+      tek[i]->getDataSettings()->print();
+      tek[i]->getFastFrameSettings()->print();
+    }
+
+    if ( run_display ) {
+      std::cout << "** Displaying Traces **" << std::endl;
+      // how to do this?
+      for (int i=0; i<NUMSCOPES; i++) {
+	TKVWaveformTree wfm( tek[i]->getChannelBuffers(), MAXCH );
+	display[i]->display( &wfm );
+      }
+    }
     std::string response;
     std::cout << "Acquired one buffer" << std::endl;
-    std::cout << "Press [Enter] to continue, [q] to quit." << std::endl;
+    std::cout << "Press [c] to continue, [q] to quit." << std::endl;
     std::cin >> response;
     if (response=="q")
       finished = true;
+    totwaveforms+=nwaveforms;
   }
 
 
   trig->setTriggerMode();
   trig->setOFFstate();
 
-  std::cout << "Finished." << std::endl;
+  std::cout << "Finished. Recorded " << totwaveforms << " waveforms." << std::endl;
 
   return 0;
 }

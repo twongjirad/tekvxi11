@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <iostream>
 
-TKVFastFrameSettings::TKVFastFrameSettings( char* input ) {
-  if ( input!=NULL )
-    updateParameters( input );
+TKVFastFrameSettings::TKVFastFrameSettings() {
+  // if ( input!=NULL )
+  //   updateParameters( input );
 }
 
 TKVFastFrameSettings::~TKVFastFrameSettings() {}

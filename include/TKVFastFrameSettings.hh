@@ -8,7 +8,7 @@ class TKVFastFrameSettings {
   friend class TKVWaveformBuffer;
   
 public:
-  TKVFastFrameSettings( char* scope_query_output );
+  TKVFastFrameSettings();
   ~TKVFastFrameSettings();
 
   void updateParameters( char* scope_query_output );

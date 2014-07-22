@@ -12,13 +12,14 @@ public:
   TKVWaveformBuffer();
   ~TKVWaveformBuffer();
   
-  void extractFromBuffer( char* buf, TKVFastFrameSettings* ff, TKVDataSettings* data );
+  int extractFromBuffer( char* buf, TKVFastFrameSettings* ff, TKVDataSettings* data );
+  bool isallocated() { return allocated; };
 
   int nframes;
   int nstored;
   int nsamples;
   
-  double** adc;
+  int** adc;
   double** volts;
   double* t;
   bool allocated;
