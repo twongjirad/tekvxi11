@@ -8,6 +8,7 @@ CXXFLAGS = -g -fPIC
 LDFLAGS = -lstdc++
 EXES = test_tkvscope
 ENABLEROOT = 1
+ENABLEUSB = 1
 
 # BUILD VARIABLES (No hard-coded paths here)
 CCSRC = $(wildcard src/*.cc)
@@ -18,11 +19,23 @@ EXEOBJ = $(addprefix .obj/,$(notdir $(EXESRC:.cc=.o)))
 EXEBIN = $(addprefix bin/,$(EXES))
 LOCAL_LIB += 
 STATIC_LIB += $(VXILIB) 
+
+# ROOT SETTINGS
 ifeq ($(ENABLEROOT),1)
 CXXFLAGS += -DROOTENABLED `root-config --cflags`
 LOCAL_LIB += `root-config --libs --glibs`
 #LDFLAGS += `root-config --ldflags`
 endif
+
+# LIBUSB SETTINGS
+ifeq ($(ENABLEUSB),1)
+EXES += list_usb usbcmd
+CXXFLAGS += -DUSBENABLED
+LOCAL_INC += `pkg-config --cflags libusb-1.0`
+LOCAL_LIB += `pkg-config --libs libusb-1.0`
+endif
+
+
 
 
 .PHONY: lib clean all

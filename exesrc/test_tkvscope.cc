@@ -12,9 +12,11 @@ int main( int narg, char** argv ) {
 
   TApplication* app = new TApplication("app",0,0);
 
+  std::string ipaddress = "192.168.1.101";
+
   TKVScopeManager* man = TKVScopeManager::getScopeManager();
-  man->openDevice( "192.168.1.3" );
-  TKVScope* tek1 = man->getScope( "192.168.1.3" );
+  man->openDevice( ipaddress.c_str() );
+  TKVScope* tek1 = man->getScope( ipaddress.c_str() );
   tek1->idn();
 
   tek1->readChannelSettings( 1 );
@@ -24,10 +26,10 @@ int main( int narg, char** argv ) {
   for (int i=1; i<=4; i++)
     tek1->getChannelSettings(i)->print();
 
-  tek1->setChannelToRecord( 1, true );
-  //tek1->setChannelToRecord( 2, true );
-  //tek1->setChannelToRecord( 3, true );
-  //tek1->setChannelToRecord( 4, true );
+  //tek1->setChannelToRecord( 1, true );
+  tek1->setChannelToRecord( 2, true );
+  // tek1->setChannelToRecord( 3, true );
+  // tek1->setChannelToRecord( 4, true );
 
   tek1->readHorizontalSettings();
   tek1->getHorizontalSettings()->print();
@@ -38,10 +40,10 @@ int main( int narg, char** argv ) {
   tek1->readDataSettings();
   tek1->getDataSettings()->print();
 
-  //tek1->acquireOneTrigger();
-  tek1->acquireFastFrame( 500, 200 );
-  tek1->getFastFrameSettings()->print();
-  tek1->getDataSettings()->print();
+  tek1->acquireOneTrigger();
+  //tek1->acquireFastFrame( 10000, 20 );
+  //tek1->getFastFrameSettings()->print();
+  //tek1->getDataSettings()->print();
 
   std::cout << "Finished." << std::endl;
   std::cin.get();
