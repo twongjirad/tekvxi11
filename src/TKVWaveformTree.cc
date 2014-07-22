@@ -4,32 +4,65 @@
 #include "TKVWaveformBufferCollection.hh"
 #ifdef ROOTENABLED
 #include "TTree.h"
+#include "TFile.h"
 #endif
 
-TKVWaveformTree::TKVWaveformTree( TKVWaveformBufferCollection* waveforms, int maxchannels ) {
+TKVWaveformTree::TKVWaveformTree( std::string filename ) 
+  : TKVVWaveformOutput( filename ) {
 
-  char branchinfo[100];
-  char branchname[100];
   waveforms_array = NULL;
   activechannels = NULL;
   samples_per_waveform = 1;
 
 #ifdef ROOTENABLED
+  waveforminfo = NULL;
+  waveformdata = NULL;
+  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
+#endif
+
+}
+
+TKVWaveformTree::~TKVWaveformTree() {
+#ifdef ROOTENABLED
+  delete waveforminfo;
+  delete waveformdata;
+  if ( waveforms_array!=NULL ) {
+    for (int i=0; i<numchannels; i++) {
+      delete [] waveforms_array[i];
+    }
+    delete [] waveforms_array;
+    waveforms_array = NULL;
+  }
+#endif
+  delete activechannels;
+  delete m_outfile;
+}
+
+
+void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
+
+  char branchinfo[100];
+  char branchname[100];
+  
+#ifdef ROOTENABLED
+  // Setup in File's directory
+  m_outfile->cd();
+
   // Setup Variables
-  numchannels = maxchannels;
+  numchannels = waveforms->numBuffers();
   waveforms_array = new double*[numchannels];
   activechannels = new int[numchannels];
 
   // Setup information tree
   waveforminfo = new TTree( "waveforminfo", "Info about waveforms stored in file" );
   waveforminfo->Branch( "numchannels", &numchannels, "numchannels/I" );
-  sprintf( branchinfo, "activechannels[%d]/I", maxchannels );
+  sprintf( branchinfo, "activechannels[%d]/I", numchannels );
   waveforminfo->Branch( "activechannels", activechannels, branchinfo );
   waveforminfo->Branch( "samples_per_waveform", &samples_per_waveform, "samples_per_waveform/I" );
 
   // Get channel information
   bool atleastone = false;
-  for (int i=0; i<maxchannels; i++) {
+  for (int i=0; i<numchannels; i++) {
     TKVWaveformBuffer* ch_wfm = waveforms->getChannelBuffer(i);
     if ( ch_wfm->isallocated() ) {
       atleastone = true;
@@ -44,7 +77,7 @@ TKVWaveformTree::TKVWaveformTree( TKVWaveformBufferCollection* waveforms, int ma
   
   // Setup waveforms tree
   waveformdata = new TTree( "waveformdata", "Waveforms" );
-  for (int i=0; i<maxchannels; i++ ) {
+  for (int i=0; i<numchannels; i++ ) {
 
     waveforms_array[i] = new double[ samples_per_waveform ];
     memset( waveforms_array[i], 0, sizeof(double)*samples_per_waveform );
@@ -61,24 +94,12 @@ TKVWaveformTree::TKVWaveformTree( TKVWaveformBufferCollection* waveforms, int ma
 }
 
 
-TKVWaveformTree::~TKVWaveformTree() {
-#ifdef ROOTENABLED
-  delete waveforminfo;
-  delete waveformdata;
-  if ( waveforms_array!=NULL ) {
-    for (int i=0; i<numchannels; i++) {
-      delete [] waveforms_array[i];
-    }
-    delete [] waveforms_array;
-    waveforms_array = NULL;
-  }
-#endif
-  delete activechannels;
-  
-}
 
 int TKVWaveformTree::appendWaveforms( TKVWaveformBufferCollection* waveforms ) {
 #ifdef ROOTENABLED
+  if ( !waveformdata || !waveforminfo )
+    setupTrees( waveforms );
+
   int iwfms = 0;
   bool morewfms = true;
   while ( morewfms ) {
@@ -111,4 +132,10 @@ int TKVWaveformTree::entries() {
 #else
   return 0;
 #endif
+}
+
+void TKVWaveformTree::saveWaveforms() {
+  m_outfile->cd();
+  waveformdata->Write();
+  waveforminfo->Write();
 }

@@ -3,9 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <time.h>
-//#include <thread>
-//#include <chrono>
-#include <unistd.h> // for sleep function
+#include <unistd.h>
 #include <assert.h>
 
 #include "TKVTekChannelSettings.hh"
@@ -41,9 +39,20 @@ TKVScope::TKVScope( std::string ipaddress ) {
   m_dataSettings = NULL;
   m_channelBuffers = new TKVWaveformBufferCollection( ipaddress );
 
+  fBinaryMode = true;
+
 }
 
 TKVScope::~TKVScope() {
+  if ( m_horizontalSettings )
+    delete m_horizontalSettings;
+  if ( m_fastframeSettings )
+    delete m_fastframeSettings;
+  if ( m_dataSettings )
+    delete m_dataSettings;
+  delete m_channelBuffers;
+  if ( m_clink )
+    close_device();
   
 }
 
@@ -59,6 +68,14 @@ CLINK* TKVScope::open_device( std::string ipaddress ) {
 
   fStatus = kOpenOK;
   return clnt;
+}
+
+
+void TKVScope::close_device() {
+  std::cout << "Closing out connection to scope at " << m_ipaddress << std::endl;
+  int ret = vxi11_close_device( m_ipaddress.c_str(), m_clink );
+  delete m_clink;
+  m_clink = NULL;
 }
 
 CLINK* TKVScope::get_clink() {
@@ -487,19 +504,14 @@ int TKVScope::collectWaveforms() {
       sprintf(command, "DATa:SOUrce CH%d", ch+1 );
       err = sendcmd( command );
 
-      // sprintf(command, "WFMOutpre:BYT_Nr 2");
-      // err = sendcmd( command );
-
-      //err = sendcmd( "DATa:ENCdg ASCII");
-
-      //sprintf(command, "DATa:ENCdg RIBinary");
-      err = sendcmd( "DATa:ENCdg RPBinary");
-      
-      // err = sendcmd( "WFMOutpre:BN_Fmt RI" );
-      
-      err = sendcmd( "WFMOutpre:BYT_Nr 1" );
-      
-      //err = sendcmd( "WFMOutpre:BYT_Or MSB" );
+      if ( fBinaryMode ) {
+	err = sendcmd( "DATa:ENCdg RPBinary");
+	err = sendcmd( "WFMOutpre:BYT_Nr 1" ); // scopes seem to only have 8-bit solution
+      }
+      else {
+	err = sendcmd( "DATa:ENCdg ASCII");
+	sprintf(command, "WFMOutpre:BYT_Nr 2");
+      }
 
       sprintf(command, "DATa:STARt 1");
       err = sendcmd( command );
@@ -532,14 +544,20 @@ void TKVScope::acquireOneTrigger( int nsamples_per_trace ) {
   if ( err!=0 ) assert(false);
 
   // Set encoding
-  err = sendcmd( "DATa:ENCdg RPBinary" );
-  if ( err!=0 ) assert(false);
+  if ( fBinaryMode ) {
+    err = sendcmd( "DATa:ENCdg RPBinary" );
+    if ( err!=0 ) assert(false);
 
-  // err = sendcmd( "DATa:ENCdg ASCII" );
-  // if ( err!=0 ) assert(false);
-
-  err = sendcmd( "WFMOutpre:BYT_Nr 1" );
-  if ( err!=0 ) assert(false);
+    err = sendcmd( "WFMOutpre:BYT_Nr 1" );
+    if ( err!=0 ) assert(false);
+  }
+  else {
+     err = sendcmd( "DATa:ENCdg ASCII" );
+     if ( err!=0 ) assert(false);
+     
+    err = sendcmd( "WFMOutpre:BYT_Nr 2" );
+    if ( err!=0 ) assert(false);
+  }
 
   sprintf( command, "ACQ:NUMSAM %d", nsamples_per_trace );
   err = sendcmd( command );
@@ -635,20 +653,18 @@ void TKVScope::acquireFastFrame( int nsamples, int nframes ) {
   m_fastframeSettings->print();
 
   // Set encoding
-  // err = sendcmd( "DATa:ENCdg ASCII" );
-  // if ( err!=0 ) assert(false);
-
-  err = sendcmd( "DATa:ENCdg RPBinary" );
-  if ( err!=0 ) assert(false);
-
-  // err = sendcmd( "WFMOutpre:BN_Fmt RI" );
-  // if ( err!=0 ) assert(false);
-
-  err = sendcmd( "WFMOutpre:BYT_Nr 1" );
-  if ( err!=0 ) assert(false);
-
-  // err = sendcmd( "WFMOutpre:BYT_OR MSB" );
-  // if ( err!=0 ) assert(false);
+  if ( fBinaryMode ) {
+    err = sendcmd( "DATa:ENCdg RPBinary" );
+    err = sendcmd( "WFMInpre:BYT_Nr 1" );
+    err = sendcmd( "WFMOutpre:BYT_Nr 1" );
+    if ( err!=0 ) assert(false);
+  }
+  else {
+    err = sendcmd( "DATa:ENCdg ASCII" );
+    err = sendcmd( "WFMInpre:BYT_Nr 2" );
+    err = sendcmd( "WFMOutpre:BYT_Nr 2" );
+    if ( err!=0 ) assert(false);
+  }
 
   // Tell scope to enter into single sequence mode
   err = sendcmd( "ACQuire:STOPAfter SEQuence" );

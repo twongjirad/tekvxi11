@@ -1,15 +1,23 @@
-#ifndef __TKVVWaveformWriter__
-#define  __TKVVWaveformWriter__
+#ifndef __TKVVWaveformOutput__
+#define  __TKVVWaveformOutput__
 
+#include <string>
+class TKVWaveformBufferCollection;
 
-class TKVVWaveformWriter {
+class TKVVWaveformOutput {
   
 public:
 
-  TKVVWaveformWriter( std::string filename );
-  virtual ~TKVVWaveformWriter();
+  TKVVWaveformOutput( std::string filename  );
+  virtual ~TKVVWaveformOutput();
 
-  void appendWaveforms( TKVWaveformBuffer* wfms );
+  virtual int appendWaveforms( TKVWaveformBufferCollection* wfms ) = 0;
+  virtual void saveWaveforms() = 0;
+  std::string getfilename() { return m_filename; };
+
+protected:
+
+  std::string m_filename;
 
 };
 

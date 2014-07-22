@@ -30,16 +30,24 @@ int main( int narg, char** argv ) {
   bool record_channel[2][4] = { {true,false,false,false},
 				{false,true,false,false} };
   int ntottraces = 100;
-  int nframes = 10;
+  int nframes = 100;
   int nsamples_per_trace = 5000;
   bool use_fastframe = true;
   bool run_display = false;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };
   int output_format = ROOTOUT;
   // --------------------------------------------------------------------------
+  // Output
+  if ( output_format!=ROOTOUT ) {
+    std::cout << "Haven't implemented output formats other than ROOT TTree." << std::endl;
+    return -1;
+  }
+
+  // --------------------------------------------------------------------------
 
   TKVScope* tek[NUMSCOPES];
   TKVRootDisplay* display[NUMSCOPES];
+  TKVWaveformTree* root_output[NUMSCOPES];
   long tot_acquired[NUMSCOPES] = {0, 0};
 
   std::cout << "Loading scopes.." << std::endl;
@@ -73,6 +81,7 @@ int main( int narg, char** argv ) {
     // };
 
     display[i] =  new TKVRootDisplay( ips[i] );
+    root_output[i] =  new TKVWaveformTree( output_filenames[i]+".root" );
   }    
 
   std::cout << "Loading Arduino Trigger..." << std::endl;
@@ -136,8 +145,8 @@ int main( int narg, char** argv ) {
       std::cout << "** Displaying Traces **" << std::endl;
       // how to do this?
       for (int i=0; i<NUMSCOPES; i++) {
-	TKVWaveformTree wfm( tek[i]->getChannelBuffers(), MAXCH );
-	display[i]->display( &wfm );
+	root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
+	display[i]->display( root_output[i] );
       }
     }
     std::string response;
@@ -153,6 +162,8 @@ int main( int narg, char** argv ) {
   trig->setTriggerMode();
   trig->setOFFstate();
 
+  for (int i=0; i<NUMSCOPES; i++)
+    root_output[i]->saveWaveforms();
   std::cout << "Finished. Recorded " << totwaveforms << " waveforms." << std::endl;
 
   return 0;

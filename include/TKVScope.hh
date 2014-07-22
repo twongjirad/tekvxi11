@@ -42,6 +42,8 @@ public:
   void acquireOneTrigger( int nsamples );
   void acquireFastFrame( int nsamples, int nframes );
   int collectWaveforms();
+  void acqBinary() { fBinaryMode = true; }; // default
+  void acqASCII() { fBinaryMode = false; };// not recommended
 
   TKVTekChannelSettings* getChannelSettings(int ch);
   TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
@@ -56,12 +58,14 @@ protected:
   int query( std::string string, char* buff, long buflen=BUF_LEN, int pause=0 );
   int sendcmd( std::string command );
   void waitforscope();
+  void close_device();
 
   std::string m_ipaddress;
   int m_scopenum;
   int m_iid;
   std::string m_nickname;
   CLINK* m_clink;
+  bool fBinaryMode;
 
   TKVTekChannelSettings* m_channelSettings[MAX_CHANNELS];
   TKVTekHorizontalSettings* m_horizontalSettings;
