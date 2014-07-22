@@ -5,7 +5,7 @@ Dependencies:
 -------------
 
 vxi11: 
-  Library by S. Sharples which provides a C API to send and receive commands with instruments using the VXI-11 protocal. 
+  Library by S. Sharples which provides a C API to send and receive commands with instruments using the VXI-11 protocol. 
   Code can be found here: http://optics.eee.nottingham.ac.uk/vxi11/
   Development done with version 1.10
 
@@ -27,8 +27,8 @@ Probably other ways to setup the network.
 Compilation
 -------------
 
-Need to set the location of VXI11 libary and include files in VXILIB and VIXDIR, respectively, in the GNUmakefile.
-Enable buidling with or without ROOT using ENABLEROOT variable, also found in the GNUmakefile.
+Need to set the location of VXI11 library and include files in VXILIB and VIXDIR, respectively, in the GNUmakefile.
+Enable building with or without ROOT using ENABLEROOT variable, also found in the GNUmakefile.
 
 -------------
 Executables
@@ -45,17 +45,17 @@ Once the scopes finishing recording their traces, the waveforms are transferred 
 The scopes are once again armed, and then triggered together.  
 Repeating this sequence allows the scopes to stay in sync.
 
-The program was written with the following network configuration in mind (diagram actually look like somtehing in text editors):
+The program was written with the following network configuration in mind (diagram actually look like something in text editors):
          [router]
 	     |
   ---------------------------------------------- ...
   |                          |         |
 [controlling computer]    [scope 1]  [scope 2]   ...
   |                         |   |      |   |
-[arduino via USB/serial]    |   |      |   |
+[Arduino via USB/serial]    |   |      |   |
   |                         |   |      |   |
   | (veto)                  |   |      |   |
 [trigger]  -------------------\ | /------\ | /--- ...
   |                             |          |
   |                             |          |
-[meaurement instruments]------------------------- ...
+[measurement instruments]------------------------- ...
