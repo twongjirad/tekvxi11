@@ -16,7 +16,7 @@ public:
   void updateParameters( char* scope_output_string );
   void print();
   void setToRecord( bool dowerecord=true ) { record = dowerecord; };
-  bool willRecord() { return record; };
+  bool willRecord();
 
 protected:
   int chID;

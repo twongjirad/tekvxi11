@@ -13,6 +13,13 @@ TKVTekChannelSettings::TKVTekChannelSettings(int chnumber){
 TKVTekChannelSettings::~TKVTekChannelSettings() {
 }
 
+bool TKVTekChannelSettings::willRecord() {
+  if ( record==true && state==1 )
+    return true;
+  else
+    return false;
+}
+
 void TKVTekChannelSettings::updateParameters( char* input ) {
   // Expecting input from Tektronic 5000 series query: CH<chnumber>?
   // See programmers manual for more details.

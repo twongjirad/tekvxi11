@@ -9,9 +9,10 @@
 #endif
 #include "TKVWaveformTree.hh"
 
-TKVRootDisplay::TKVRootDisplay() {
+TKVRootDisplay::TKVRootDisplay( std::string label ) {
   lastwfm = -1;
   nchannels = -1;
+  m_label = label;
 #ifdef ROOTENABLED
   canvas = NULL;
   wfms = NULL;
@@ -50,7 +51,10 @@ void TKVRootDisplay::display( TKVWaveformTree* wfmdata, int wfm_num ) {
   wfms = new TGraph[nchannels];
   
   if ( !canvas ) {
-    canvas = new TCanvas("cWaveforms","Waveforms",800,400*nchannels);
+    std::string canvname = "cWaveforms";
+    if ( m_label!="" )
+      canvname = "cWaveforms_"+m_label;
+    canvas = new TCanvas(canvname.c_str(),canvname.c_str(),600,200*nchannels);
     canvas->Divide(1,nchannels);
   }
   canvas->Draw();

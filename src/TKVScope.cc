@@ -13,6 +13,7 @@
 #include "TKVFastFrameSettings.hh"
 #include "TKVDataSettings.hh"
 #include "TKVWaveformBuffer.hh"
+#include "TKVWaveformBufferCollection.hh"
 #include "TKVWaveformTree.hh"
 #include "TKVRootDisplay.hh"
 
@@ -37,6 +38,8 @@ TKVScope::TKVScope( std::string ipaddress ) {
   memset( m_channelSettings, 0, MAX_CHANNELS );
   m_horizontalSettings = NULL;
   m_fastframeSettings = NULL;
+  m_channelBuffers = new TKVWaveformBufferCollection( ipaddress );
+
 }
 
 TKVScope::~TKVScope() {
@@ -399,6 +402,36 @@ void TKVScope::writeFastFrameSettings() {
   return ;  
 }
 
+void TKVScope::collectWaveforms() {
+
+  // Wait for scope to be free
+  waitforscope();
+
+  // Sync the scope settings
+  readDataSettings();
+  readFastFrameSettings();
+  
+  // Grab the traces
+  int err = 0;
+  char* databuffer = new char[DATA_BUF_LEN];
+  for (int ch=0; ch<MAX_CHANNELS; ch++) {
+    if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
+      m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
+    if ( m_channelSettings[ch]->willRecord() ) {
+      TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
+      char command[50];
+      sprintf(command, "DATa:SOUrce CH%d", ch+1 );
+      err = sendcmd( command );
+      
+      err = query("CURVe?", databuffer, DATA_BUF_LEN );
+      waitforscope();
+      
+      waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+    }
+  }
+  delete databuffer;
+}
+
 /* ---------------------------------------------
    Acquisition Routines
    ------------------------------------------- */
@@ -447,34 +480,33 @@ void TKVScope::acquireOneTrigger() {
   
   // Grab the traces
   char* databuffer = new char[DATA_BUF_LEN];
-  TKVWaveformBuffer** waveforms = new TKVWaveformBuffer*[MAX_CHANNELS];
   for (int ch=0; ch<MAX_CHANNELS; ch++) {
-    if ( m_channelSettings[ch]->record ) {
-      waveforms[ch] = new TKVWaveformBuffer();
+    if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
+      m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
+    if ( m_channelSettings[ch]->willRecord() ) {
+      TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
       char command[50];
       sprintf(command, "DATa:SOUrce CH%d", ch+1 );
       err = sendcmd( command );
-
+      
       err = query("CURVe?", databuffer, DATA_BUF_LEN );
       waitforscope();
-
-      waveforms[ch]->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+      
+      waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
     }
-    else
-      waveforms[ch] = NULL;
   }
-
-#ifdef ROOTENABLED
-  // Convert raw data to ROOT TTree format
-  TFile* out = new TFile("testone.root", "RECREATE" );
-  TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
-  std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
-  TKVRootDisplay* canvas = new TKVRootDisplay();
-  canvas->display( wfmtree, 0 );
-  out->Write();
-  delete out;
-  //delete wfmtree;
-#endif
+  delete databuffer;
+// #ifdef ROOTENABLED
+//   // Convert raw data to ROOT TTree format
+//   TFile* out = new TFile("testone.root", "RECREATE" );
+//   TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
+//   std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+//   TKVRootDisplay* canvas = new TKVRootDisplay();
+//   canvas->display( wfmtree, 0 );
+//   out->Write();
+//   delete out;
+//   //delete wfmtree;
+// #endif
 
 }
 
@@ -504,46 +536,45 @@ void TKVScope::acquireFastFrame( int nsamples, int nframes ) {
   if ( err!=0 ) assert(false);
 
   // Acquire!
-  std::cout << "Staring single acquisition" << std::endl;
+  std::cout << "Scope on " << m_ipaddress << " staring single fastframe acquisition" << std::endl;
   err = sendcmd( "ACQ:STATE RUN" );
   if ( err!=0 ) assert(false);
 
-  waitforscope();
+  // waitforscope();
 
-  // Sync the scope settings
-  readDataSettings();
-  readFastFrameSettings();
+  // // Sync the scope settings
+  // readDataSettings();
+  // readFastFrameSettings();
 
-    // Grab the traces
-  char* databuffer = new char[DATA_BUF_LEN];
-  TKVWaveformBuffer** waveforms = new TKVWaveformBuffer*[MAX_CHANNELS];
-  for (int ch=0; ch<MAX_CHANNELS; ch++) {
-    if ( m_channelSettings[ch]->record ) {
-      waveforms[ch] = new TKVWaveformBuffer();
-      char command[50];
-      sprintf(command, "DATa:SOUrce CH%d", ch+1 );
-      err = sendcmd( command );
+  //   // Grab the traces
+  // char* databuffer = new char[DATA_BUF_LEN];
+  // for (int ch=0; ch<MAX_CHANNELS; ch++) {
+  //   if ( !m_channelBuffers->doesChannelHaveBuffer( ch ) )
+  //     m_channelBuffers->addChannelBuffer( ch, new TKVWaveformBuffer() );
+  //   if ( m_channelSettings[ch]->willRecord() ) {
+  //     TKVWaveformBuffer* waveforms = m_channelBuffers->getChannelBuffer( ch );
+  //     char command[50];
+  //     sprintf(command, "DATa:SOUrce CH%d", ch+1 );
+  //     err = sendcmd( command );
 
-      err = query("CURVe?", databuffer );
-      waitforscope();
+  //     err = query("CURVe?", databuffer );
+  //     waitforscope();
 
-      waveforms[ch]->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
-    }
-    else
-      waveforms[ch] = NULL;
-  }
+  //     waveforms->extractFromBuffer( databuffer, m_fastframeSettings, m_dataSettings );
+  //   }
+  // }
 
-#ifdef ROOTENABLED
-  // Convert raw data to ROOT TTree format
-  TFile* out = new TFile("testsinglefastframe.root", "RECREATE" );
-  TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
-  std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
-  TKVRootDisplay* canvas = new TKVRootDisplay();
-  canvas->display( wfmtree, 0 );
-  out->Write();
-  delete out;
-  //delete wfmtree;
-#endif
+// #ifdef ROOTENABLED
+//   // Convert raw data to ROOT TTree format
+//   TFile* out = new TFile("testsinglefastframe.root", "RECREATE" );
+//   TKVWaveformTree* wfmtree = new TKVWaveformTree( waveforms, MAX_CHANNELS ); 
+//   std::cout << "Stored " << wfmtree->entries() << " waveforms per channel" << std::endl;
+//   TKVRootDisplay* canvas = new TKVRootDisplay();
+//   canvas->display( wfmtree, 0 );
+//   out->Write();
+//   delete out;
+//   //delete wfmtree;
+// #endif
 
 }
 

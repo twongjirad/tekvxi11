@@ -17,10 +17,14 @@ public:
   bool isconnected() { return connected; };
   int setONstate();
   int setOFFstate();
+  void setVetoMode(); // sends 1, when OFF state asked for
+  void setTriggerMode(); // sends 1, when ON state asked for
 
 protected:
   bool connected;
   int portid;
+  bool vetomode;
+  int state;
 
 };
 

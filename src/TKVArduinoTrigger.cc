@@ -5,10 +5,12 @@
 #include <string>
 
 TKVArduinoTrigger::TKVArduinoTrigger() {
-  connected = false;
+  state = 0;
+  connect();
 }
 
 TKVArduinoTrigger::~TKVArduinoTrigger() {
+  vetomode = false;
   if ( connected )
     disconnect();
 }
@@ -18,9 +20,10 @@ int TKVArduinoTrigger::connect() {
   if ( portid==-1 ) {
     std::cout << "Error, could not open serial port" << std::endl;
     connected = false;
-    serialport_flush(portid);
     return -1;
   }
+  serialport_flush(portid);
+  connected = true;
   return 0; // success
 }
 
@@ -29,9 +32,11 @@ int TKVArduinoTrigger::setONstate() {
     std::cout << "Arduino not connected!" << std::endl;
     return -1;
   }
-  
-  int rc = serialport_write( portid, std::string("1\n").c_str() );
-
+  state = 1;
+  if ( !vetomode )
+    serialport_write( portid, std::string("1").c_str() );
+  else
+    serialport_write( portid, std::string("0").c_str() );
 }
 
 int TKVArduinoTrigger::setOFFstate() {
@@ -39,13 +44,31 @@ int TKVArduinoTrigger::setOFFstate() {
     std::cout << "Arduino not connected!" << std::endl;
     return -1;
   }
-  
-  int rc = serialport_write( portid, std::string("0\n").c_str() );
-
+  state = 0;
+  if ( !vetomode )
+    serialport_write( portid, std::string("0").c_str() );
+  else
+    serialport_write( portid, std::string("1").c_str() );
 }
 
 void TKVArduinoTrigger::disconnect() {
   if ( isconnected() )
     serialport_close( portid );
   connected = false;
+}
+
+void TKVArduinoTrigger::setVetoMode() {
+  vetomode=true;
+  if ( state==0 )
+    setOFFstate();
+  else
+    setONstate();
+}
+
+void TKVArduinoTrigger::setTriggerMode() {
+  vetomode=false;
+  if ( state==0 )
+    setOFFstate();
+  else
+    setONstate();
 }

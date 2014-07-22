@@ -12,10 +12,12 @@
 #define DATA_BUF_LEN 10000000
 #define MAX_CHANNELS 4
 
-class TKVTekChannelSettings;    // vertical scale settings per channel
-class TKVTekHorizontalSettings; // information about time axis
-class TKVFastFrameSettings;     // information for fast frame acquisition mode
-class TKVDataSettings;          // information on the format the waveforms received
+class TKVTekChannelSettings;       // vertical scale settings per channel
+class TKVTekHorizontalSettings;    // information about time axis
+class TKVFastFrameSettings;        // information for fast frame acquisition mode
+class TKVDataSettings;             // information on the format the waveforms received
+class TKVWaveformBuffer;           // class parses/stores data taken from scope buffer
+class TKVWaveformBufferCollection; // container class for waveform buffer objects. hashed using channl number.
 
 class TKVScope {
   friend class TKVScopeManager;
@@ -38,6 +40,7 @@ public:
   void readDataSettings();
   void acquireOneTrigger();
   void acquireFastFrame( int nsamples, int nframes );
+  void collectWaveforms();
 
   TKVTekChannelSettings* getChannelSettings(int ch);
   TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
@@ -62,6 +65,7 @@ protected:
   TKVTekHorizontalSettings* m_horizontalSettings;
   TKVFastFrameSettings* m_fastframeSettings;
   TKVDataSettings* m_dataSettings;
+  TKVWaveformBufferCollection* m_channelBuffers;
 
   enum { kError=-1, kOpenOK, kClosedOK };
   int fStatus;
