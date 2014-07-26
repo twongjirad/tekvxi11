@@ -82,6 +82,7 @@ int main( int narg, char** argv ) {
 
     display[i] =  new TKVRootDisplay( ips[i] );
     root_output[i] =  new TKVWaveformTree( output_filenames[i]+".root" );
+    root_output[i]->setupForOutput();
   }    
 
   std::cout << "Loading Arduino Trigger..." << std::endl;
@@ -141,6 +142,11 @@ int main( int narg, char** argv ) {
       tek[i]->getFastFrameSettings()->print();
     }
 
+    // append waveform to trees
+    for (int i=0; i<NUMSCOPES; i++) {
+      root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
+    }
+    
     if ( run_display ) {
       std::cout << "** Displaying Traces **" << std::endl;
       // how to do this?
@@ -152,9 +158,9 @@ int main( int narg, char** argv ) {
     std::string response;
     std::cout << "Acquired one buffer" << std::endl;
     std::cout << "Press [c] to continue, [q] to quit." << std::endl;
-    std::cin >> response;
-    if (response=="q")
-      finished = true;
+    //std::cin >> response;
+    //if (response=="q")
+    //finished = true;
     totwaveforms+=nwaveforms;
   }
 

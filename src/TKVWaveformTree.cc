@@ -6,6 +6,8 @@
 #include "TTree.h"
 #include "TFile.h"
 #endif
+#include <iostream>
+#include <assert.h>
 
 TKVWaveformTree::TKVWaveformTree( std::string filename ) 
   : TKVVWaveformOutput( filename ) {
@@ -17,7 +19,9 @@ TKVWaveformTree::TKVWaveformTree( std::string filename )
 #ifdef ROOTENABLED
   waveforminfo = NULL;
   waveformdata = NULL;
-  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
+  //m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
+  m_outfile = NULL;
+  //new TFile( getfilename().c_str(), "RECREATE" );
 #endif
 
 }
@@ -40,6 +44,14 @@ TKVWaveformTree::~TKVWaveformTree() {
 
 
 void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
+
+  if ( fMode!=WRITE ) {
+    std::cout << "Need to setup this instance to be in write mode using setupForOutput()" << std::endl;
+    assert(false);
+    return;
+  }
+
+  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
 
   char branchinfo[100];
   char branchname[100];
@@ -87,9 +99,10 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
     waveformdata->Branch( branchname, waveforms_array[i], branchinfo );
   }
   // Save waveforms to tree
-  appendWaveforms( waveforms );
+  //appendWaveforms( waveforms );
+  fMode = WRITE;
 #else
-  std::cout << "Root not enabled. This class, TKVWaveformTree, does nothing." << std::endl;
+  std::cout << "ROOT not enabled. This class, TKVWaveformTree, does nothing." << std::endl;
 #endif
 }
 
@@ -138,4 +151,20 @@ void TKVWaveformTree::saveWaveforms() {
   m_outfile->cd();
   waveformdata->Write();
   waveforminfo->Write();
+}
+
+void TKVWaveformTree::setupForOutput() {
+  if ( fMode!=UNSPECIFIED ) {
+    std::cout << "Already specified mode for this instance!" << std::endl;
+    return;
+  }
+  fMode = WRITE;
+}
+
+void TKVWaveformTree::setupForInput() {
+  if ( fMode!=UNSPECIFIED ) {
+    std::cout << "Already specified mode for this instance!" << std::endl;
+    return;
+  }
+  fMode = READ;
 }

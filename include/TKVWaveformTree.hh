@@ -10,9 +10,11 @@ class TTree;
 class TFile;
 #endif
 
+
 class TKVWaveformTree : public  TKVVWaveformOutput {
 
 public:
+
   TKVWaveformTree( std::string filename );
   ~TKVWaveformTree();
   int entries();
@@ -33,8 +35,12 @@ public:
 public:
   virtual int appendWaveforms( TKVWaveformBufferCollection* waveforms );
   virtual void saveWaveforms();
+  virtual void setupForOutput();
+  virtual void setupForInput();
   
 protected:
+  typedef enum { UNSPECIFIED, WRITE, READ } IOMode_t;
+  IOMode_t fMode;
   void setupTrees( TKVWaveformBufferCollection* waveforms );
   
 };

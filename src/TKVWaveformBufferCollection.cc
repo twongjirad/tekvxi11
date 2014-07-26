@@ -1,5 +1,6 @@
 #include "TKVWaveformBufferCollection.hh"
 #include "TKVWaveformBuffer.hh"
+#include <iostream>
 
 TKVWaveformBufferCollection::TKVWaveformBufferCollection( std::string collection_name ) {
   m_collection_name = collection_name;
