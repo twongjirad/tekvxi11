@@ -151,7 +151,7 @@ int main( int narg, char** argv ) {
       std::cout << "** Displaying Traces **" << std::endl;
       // how to do this?
       for (int i=0; i<NUMSCOPES; i++) {
-	root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
+	//root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
 	display[i]->display( root_output[i] );
       }
     }
