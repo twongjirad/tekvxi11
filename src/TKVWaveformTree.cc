@@ -51,12 +51,13 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
     return;
   }
 
-  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
-
   char branchinfo[100];
   char branchname[100];
   
 #ifdef ROOTENABLED
+  // create file
+  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
+
   // Setup in File's directory
   m_outfile->cd();
 
@@ -98,9 +99,8 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
     sprintf( branchinfo, "ch%dwfms[%d]/D", i+1, samples_per_waveform );
     waveformdata->Branch( branchname, waveforms_array[i], branchinfo );
   }
-  // Save waveforms to tree
-  //appendWaveforms( waveforms );
   fMode = WRITE;
+
 #else
   std::cout << "ROOT not enabled. This class, TKVWaveformTree, does nothing." << std::endl;
 #endif
