@@ -42,6 +42,7 @@ protected:
   typedef enum { UNSPECIFIED, WRITE, READ } IOMode_t;
   IOMode_t fMode;
   void setupTrees( TKVWaveformBufferCollection* waveforms );
+  void setupInputTrees();
   
 };
 

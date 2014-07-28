@@ -47,6 +47,7 @@ void TKVRootDisplay::display( TKVWaveformTree* wfmdata, int wfm_num ) {
 
 
   nchannels=wfmdata->numchannels;
+  std::cout << "displaying " << nchannels << " nchannels" << std::endl;
   delete [] wfms;
   wfms = new TGraph[nchannels];
   

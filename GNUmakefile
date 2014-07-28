@@ -6,7 +6,7 @@ LOCAL_INC = -I./include
 LOCAL_LIB = 
 CXXFLAGS = -g -fPIC
 LDFLAGS = -lstdc++
-EXES = test_tkvscope run_synced_acq
+EXES = test_tkvscope run_synced_acq tkv_viewer
 ENABLEROOT = 1
 ENABLEUSB = 1
 

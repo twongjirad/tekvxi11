@@ -15,6 +15,7 @@ TKVWaveformTree::TKVWaveformTree( std::string filename )
   waveforms_array = NULL;
   activechannels = NULL;
   samples_per_waveform = 1;
+  fMode = UNSPECIFIED;
 
 #ifdef ROOTENABLED
   waveforminfo = NULL;
@@ -167,4 +168,54 @@ void TKVWaveformTree::setupForInput() {
     return;
   }
   fMode = READ;
+  setupInputTrees();
+}
+
+void TKVWaveformTree::setupInputTrees() {
+  if ( fMode!=READ ) {
+    std::cout << "TKVWaveformTree instance not declared as input/read mode!" << std::endl;
+    return;
+  }
+
+#ifdef ROOTENABLED
+
+  char branchinfo[100];
+  char branchname[100];
+
+  if ( m_outfile || waveforminfo || waveformdata ) {
+    std::cout << "Already setup interface to data for " << getfilename() << std::endl;
+    return;
+  }
+
+  // open file
+  m_outfile = new TFile( getfilename().c_str() );
+
+  // declare trees
+  waveforminfo = (TTree*)m_outfile->Get( "waveforminfo");
+  waveformdata = (TTree*)m_outfile->Get( "waveformdata" );
+
+  // get number of channels
+  waveforminfo->SetBranchAddress( "numchannels", &numchannels );
+  waveforminfo->SetBranchAddress( "samples_per_waveform", &samples_per_waveform );
+  waveforminfo->GetEntry(0);
+  std::cout << "Reading data with " << numchannels << " channels with " << samples_per_waveform << " samples per waveform" << std::endl;
+
+  // setup variables
+  waveforms_array = new double*[numchannels];
+  activechannels = new int[numchannels];
+  waveforminfo->SetBranchAddress( "activechannels", activechannels );
+  for (int i=0; i<numchannels; i++ ) {
+
+    waveforms_array[i] = new double[ samples_per_waveform ];
+    memset( waveforms_array[i], 0, sizeof(double)*samples_per_waveform );
+    
+    sprintf( branchname, "ch%dwfms",i+1 );
+    sprintf( branchinfo, "ch%dwfms[%d]/D", i+1, samples_per_waveform );
+    waveformdata->SetBranchAddress( branchname, waveforms_array[i] );
+  }
+
+  waveforminfo->GetEntry(0);
+  waveformdata->GetEntry(0);
+#endif
+
 }
