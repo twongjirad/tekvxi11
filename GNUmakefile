@@ -1,14 +1,14 @@
 #SETTINGS
 GXX = g++
-VXIDIR=/home/twongjirad/working/vxi11_1.10
+VXIDIR=/home/tmw/working/vxi11_1.10
 VXILIB=$(VXIDIR)/libvxi11_1.10.a
 LOCAL_INC = -I./include
 LOCAL_LIB = 
 CXXFLAGS = -g -fPIC
 LDFLAGS = -lstdc++
-EXES = test_tkvscope run_synced_acq tkv_viewer
+EXES = test_tkvscope run_synced_acq tkv_viewer ping_scope
 ENABLEROOT = 1
-ENABLEUSB = 1
+ENABLEUSB = 0
 
 # BUILD VARIABLES (No hard-coded paths here)
 CCSRC = $(wildcard src/*.cc)
