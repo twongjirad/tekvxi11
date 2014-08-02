@@ -159,7 +159,8 @@ void TKVScope::waitforscope() {
     //sleep(5);
     usleep( 250000 ); // 250 milliseconds
     err = query( "*OPC?", buf );
-    if ( err!=0 ) assert(false);
+    if ( err!=0 ) 
+      continue;
     final = clock()-init;
     sec_elapsed = (double)final/(double)CLOCKS_PER_SEC;
     //std::cout << "*OPC? check after " << sec_elapsed << ": " << buf << std::endl;

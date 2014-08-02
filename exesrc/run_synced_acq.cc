@@ -27,11 +27,13 @@ int main( int narg, char** argv ) {
   std::string ips[NUMSCOPES];
   ips[0] = "192.168.1.101";   //TDS5054
   ips[1] = "192.168.1.3"; //DPO5054
-  bool record_channel[2][4] = { {true,false,false,false},
-				{false,true,false,false} };
-  int ntottraces = 100;
-  int nframes = 100;
-  int nsamples_per_trace = 5000;
+  bool use_arduino_trigger = false;
+  bool record_scopes[NUMSCOPES] = {true, false };
+  bool record_channel[2][4] = { {false,true,false,false},
+				{false,false,false,false} };
+  int ntottraces = 40000;
+  int nframes = 1000;
+  int nsamples_per_trace = 1000;
   bool use_fastframe = true;
   bool run_display = false;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };
@@ -53,6 +55,8 @@ int main( int narg, char** argv ) {
   std::cout << "Loading scopes.." << std::endl;
   TKVScopeManager* man = TKVScopeManager::getScopeManager();
   for (int i=0; i<NUMSCOPES; i++) {
+    if ( !record_scopes[i] )
+      continue;
     man->openDevice( ips[i].c_str() );
     tek[i] = man->getScope( ips[i].c_str());
     tek[i]->idn();
@@ -86,14 +90,17 @@ int main( int narg, char** argv ) {
   }    
 
   std::cout << "Loading Arduino Trigger..." << std::endl;
-  TKVArduinoTrigger* trig = new TKVArduinoTrigger();
-  if ( !trig->isconnected() ) {
-    std::cout << "Could not connect arduino. quitting." << std::endl;
-    delete trig;
-    return -1;
+  TKVArduinoTrigger* trig = NULL;
+  if ( use_arduino_trigger )  {
+    new TKVArduinoTrigger();
+    if ( !trig->isconnected() ) {
+      std::cout << "Could not connect arduino. quitting." << std::endl;
+      delete trig;
+      return -1;
+    }
+    std::cout << "Set veto mode." << std::endl;
+    trig->setVetoMode();
   }
-  std::cout << "Set veto mode." << std::endl;
-  trig->setVetoMode();
 
   std::cout << "Staring acquisition loop ...." << std::endl;
 
@@ -105,12 +112,17 @@ int main( int narg, char** argv ) {
     // acquisition loop.
 
     // first arm arduino to stop triggers from entering scopes
-    std::cout << "Start veto ... ";
-    trig->setONstate();
+    if ( use_arduino_trigger ) {
+      std::cout << "Start veto ... ";
+      trig->setONstate();
+    }
 
     std::cout << "Arming scopes ... " << std::endl;;
     // arm scopes
     for (int i=0; i<NUMSCOPES; i++) {
+      if ( !record_scopes[i] )
+	continue;
+
       if ( use_fastframe )
     	tek[i]->acquireFastFrame( nsamples_per_trace, nframes );
       else
@@ -118,22 +130,29 @@ int main( int narg, char** argv ) {
     }
 
     // stop veto of triggers
-    sleep(3);
+    sleep(1);
 
-    std::cout << "Release veto ...";
-    trig->setOFFstate();
+    if ( use_arduino_trigger ) {
+      std::cout << "Release veto ...";
+      trig->setOFFstate();
+    }
 
 
     std::cout << "Collecting buffers ... " << std::endl;
     int nwaveforms = 0;
     // collect buffers
     for (int i=0; i<NUMSCOPES; i++) {
-      nwaveforms = tek[i]->collectWaveforms();
+      if ( !record_scopes[i] ) 
+	continue;
+       tot_acquired[i] += tek[i]->collectWaveforms();
     }
 
 
     // arm scopes
     for (int i=0; i<NUMSCOPES; i++) {
+      if ( !record_scopes[i] )
+	continue;
+
       // for (int ch=1; ch<=MAXCH; ch++)
       // 	if ( tek[i]->getChannelSettings(ch)->willRecord() )
       // 	  tek[i]->getChannelSettings(ch)->print();
@@ -144,6 +163,8 @@ int main( int narg, char** argv ) {
 
     // append waveform to trees
     for (int i=0; i<NUMSCOPES; i++) {
+      if ( !record_scopes[i] )
+	continue;
       root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
     }
     
@@ -151,6 +172,8 @@ int main( int narg, char** argv ) {
       std::cout << "** Displaying Traces **" << std::endl;
       // how to do this?
       for (int i=0; i<NUMSCOPES; i++) {
+	if ( !record_scopes[i] )
+	  continue;
 	//root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
 	display[i]->display( root_output[i] );
       }
@@ -161,15 +184,24 @@ int main( int narg, char** argv ) {
     //std::cin >> response;
     //if (response=="q")
     //finished = true;
-    totwaveforms+=nwaveforms;
+    finished = true;
+    for (int i=0; i<NUMSCOPES; i++) {
+      if ( record_scopes[i] && tot_acquired[i]<ntottraces )
+	finished = false;
+    }
+  }//end of acquisition loop
+
+
+  if ( use_arduino_trigger ) {
+    trig->setTriggerMode();
+    trig->setOFFstate();
   }
 
-
-  trig->setTriggerMode();
-  trig->setOFFstate();
-
-  for (int i=0; i<NUMSCOPES; i++)
+  for (int i=0; i<NUMSCOPES; i++) {
+    if ( !record_scopes[i] )
+      continue;
     root_output[i]->saveWaveforms();
+  }
   std::cout << "Finished. Recorded " << totwaveforms << " waveforms." << std::endl;
 
   return 0;
