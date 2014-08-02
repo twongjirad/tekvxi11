@@ -96,9 +96,9 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
   // Setup waveforms tree
   waveformdata = new TTree( "waveformdata", "Waveforms" );
 
-  sprintf( branchinfo, "secs_per_sample[%d]/D", numchannels );
-  sprintf( branchname, "secs_per_sample");
-  waveformdata->Branch( branchname, secs_per_sample, branchinfo );
+//   sprintf( branchinfo, "secs_per_sample[%d]/D", numchannels );
+//   sprintf( branchname, "secs_per_sample");
+//   waveformdata->Branch( branchname, secs_per_sample, branchinfo );
   for (int i=0; i<numchannels; i++ ) {
 
     waveforms_array[i] = new double[ samples_per_waveform ];
