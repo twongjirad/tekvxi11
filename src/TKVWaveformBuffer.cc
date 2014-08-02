@@ -58,13 +58,7 @@ void TKVWaveformBuffer::destroyMemBlock() {
 }
 
 int TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff, TKVDataSettings* data ) {
-  //if ( data->nsamples!=nsamples || data->framesinbuffer!=nframes || !allocated) {
-  //  configureMemBlock( data->nsamples, data->framesinbuffer );
-  //}
-  // if ( ff->framelength!=nsamples || ff->numframes!=nframes || !allocated) {
-  //   // if the data format configuration has changed, we reconfigure the memory block
-  //   configureMemBlock( ff->framelength, ff->numframes );
-  // }
+
   if ( data->nsamples!=nsamples || ff->numframes!=nframes || !allocated) {
     // if the data format configuration has changed, we reconfigure the memory block
     configureMemBlock( data->nsamples, ff->numframes );
@@ -190,6 +184,7 @@ int TKVWaveformBuffer::extractFromBuffer( char* buff, TKVFastFrameSettings* ff, 
   }
 
   // TDC
+  secs_per_sample = data->secspertdc;
   for (int isample=0; isample<nsamples; isample++) {
     t[isample] = isample*data->secspertdc;
   }

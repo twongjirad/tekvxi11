@@ -28,6 +28,7 @@ public:
   // waveforminfo
   int numchannels;
   int* activechannels;
+  double* secs_per_sample;
   int samples_per_waveform;
   // waveformdata
   double** waveforms_array; // [numchannels][sample array]

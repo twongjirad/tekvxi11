@@ -18,6 +18,7 @@ public:
   int nframes;
   int nstored;
   int nsamples;
+  double secs_per_sample;
   
   int** adc;
   double** volts;

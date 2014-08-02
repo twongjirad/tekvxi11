@@ -66,6 +66,7 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
   numchannels = waveforms->numBuffers();
   waveforms_array = new double*[numchannels];
   activechannels = new int[numchannels];
+  secs_per_sample = new double[numchannels];
 
   // Setup information tree
   waveforminfo = new TTree( "waveforminfo", "Info about waveforms stored in file" );
@@ -73,6 +74,8 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
   sprintf( branchinfo, "activechannels[%d]/I", numchannels );
   waveforminfo->Branch( "activechannels", activechannels, branchinfo );
   waveforminfo->Branch( "samples_per_waveform", &samples_per_waveform, "samples_per_waveform/I" );
+  sprintf( branchinfo, "secs_per_sample[%d]/D", numchannels );
+  waveforminfo->Branch( "secs_per_sample", secs_per_sample, branchinfo );
 
   // Get channel information
   bool atleastone = false;
@@ -82,6 +85,7 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
       atleastone = true;
       activechannels[i] = 1;
       samples_per_waveform = ch_wfm->nsamples;
+      secs_per_sample[i] = ch_wfm->secs_per_sample;
     }
     else {
       activechannels[i] = 0;
