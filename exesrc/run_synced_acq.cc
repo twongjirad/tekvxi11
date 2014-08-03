@@ -177,17 +177,24 @@ int main( int narg, char** argv ) {
 	//root_output[i]->appendWaveforms( tek[i]->getChannelBuffers() );
 	display[i]->display( root_output[i] );
       }
+  
+      std::string response;
+      std::cout << "Acquired one buffer" << std::endl;
+      std::cout << "Press [c] to continue, [q] to quit." << std::endl;
+      std::cin >> response;
+      if (response=="q")
+	finished = true;
     }
-    std::string response;
-    std::cout << "Acquired one buffer" << std::endl;
-    std::cout << "Press [c] to continue, [q] to quit." << std::endl;
-    //std::cin >> response;
-    //if (response=="q")
-    //finished = true;
-    finished = true;
-    for (int i=0; i<NUMSCOPES; i++) {
-      if ( record_scopes[i] && tot_acquired[i]<ntottraces )
-	finished = false;
+    else {
+      // batch mode
+      finished = true;
+      for (int i=0; i<NUMSCOPES; i++) {
+	if ( record_scopes[i] && tot_acquired[i]<ntottraces )
+	  finished = false;
+	else {
+	  std::cout << "Scope on " << ips[i] << ": collected " << tot_acquired[i] << " of " << ntottraces << " waveforms" << std::endl;
+	}
+      }
     }
   }//end of acquisition loop
 
@@ -201,8 +208,9 @@ int main( int narg, char** argv ) {
     if ( !record_scopes[i] )
       continue;
     root_output[i]->saveWaveforms();
+    std::cout << "Finished. Scope on " << ips[i] << " collected " << tot_acquired[i] << " waveforms" << std::endl;
   }
-  std::cout << "Finished. Recorded " << totwaveforms << " waveforms." << std::endl;
+  
 
   return 0;
 }
