@@ -22,15 +22,15 @@ int main( int narg, char** argv ) {
   const int NUMSCOPES = 2;
   const int MAXCH = 4;
   std::string output_filenames[NUMSCOPES];
-  output_filenames[0]="output_wfms_tektds";
-  output_filenames[1]="output_wfms_tekdpo";
+  output_filenames[0]="output_wfms_tekdpo";
+  output_filenames[1]="output_wfms_tektds";
   std::string ips[NUMSCOPES];
-  ips[0] = "192.168.1.101";   //TDS5054
-  ips[1] = "192.168.1.3"; //DPO5054
+  ips[0] = "192.168.1.101"; //DPO5054
+  ips[1] = "192.168.1.3";  //TDS5054
   bool use_arduino_trigger = false;
   bool record_scopes[NUMSCOPES] = {true, false };
   bool record_channel[2][4] = { {false,true,false,false},
-				{false,false,false,false} };
+  				{false,false,false,false} };
   int ntottraces = 40000;
   int nframes = 1000;
   int nsamples_per_trace = 1000;
@@ -189,8 +189,10 @@ int main( int narg, char** argv ) {
       // batch mode
       finished = true;
       for (int i=0; i<NUMSCOPES; i++) {
-	if ( record_scopes[i] && tot_acquired[i]<ntottraces )
+	if ( record_scopes[i] && tot_acquired[i]<ntottraces ) {
 	  finished = false;
+	  std::cout << "\nAcquired " << tot_acquired[i] << " waveforms so far.\n";
+	}
 	else {
 	  std::cout << "Scope on " << ips[i] << ": collected " << tot_acquired[i] << " of " << ntottraces << " waveforms" << std::endl;
 	}
