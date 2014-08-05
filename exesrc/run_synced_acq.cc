@@ -22,18 +22,23 @@ int main( int narg, char** argv ) {
   const int NUMSCOPES = 2;
   const int MAXCH = 4;
   std::string output_filenames[NUMSCOPES];
-  output_filenames[0]="output_wfms_tekdpo";
-  output_filenames[1]="output_wfms_tektds";
+  output_filenames[0]="output_wfms_tekdpo_2inch_1600V_LED_080414_0";
+  output_filenames[1]="output_wfms_tektds_SiPM4_Trigger_080414_0";
   std::string ips[NUMSCOPES];
   ips[0] = "192.168.1.101"; //DPO5054
   ips[1] = "192.168.1.3";  //TDS5054
   bool use_arduino_trigger = false;
-  bool record_scopes[NUMSCOPES] = {true, false };
+  bool record_scopes[NUMSCOPES] = {true, false }; //LED
+  //bool record_scopes[NUMSCOPES] = {false, true }; //SiPM
   bool record_channel[2][4] = { {false,true,false,false},
-  				{false,false,false,false} };
+  				{false,false,false,false} }; //LED
+  //bool record_channel[2][4] = { {false,false,false,false},
+  //				{true,true,true,true} }; //SiPM
   int ntottraces = 40000;
-  int nframes = 1000;
-  int nsamples_per_trace = 1000;
+  int nframes = 1000; //LED
+  //int nframes = 23; //SiPM
+  int nsamples_per_trace = 1000; //LED
+  //int nsamples_per_trace = 5000; //SiPM
   bool use_fastframe = true;
   bool run_display = false;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };

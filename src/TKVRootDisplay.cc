@@ -99,8 +99,11 @@ void TKVRootDisplay::display( TKVWaveformTree* wfmdata, int wfm_num ) {
       std::cout << "  [n] next waveform(s)" << std::endl;
       std::cout << "  [p] previous waveform(s)" << std::endl;
       std::cout << "  [#] enter number to go to waveform" << std::endl;
-      std::cin >> response;
+      //std::cin >> response;
+      usleep(10000);
       response = response.substr( 0, response.find(' \n'));
+      response = "n";
+      if(lastwfm==1) lastwfm = 39199;
       if ( response!="q" &&
 	   response!="n" &&
 	   response!="p" &&

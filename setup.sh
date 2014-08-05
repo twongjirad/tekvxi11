@@ -1,1 +1,2 @@
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:~/working/bitbucket/tekvxi11
+#!/bin/csh
+setenv LD_LIBRARY_PATH /home/tmw/working/tekvxi11
