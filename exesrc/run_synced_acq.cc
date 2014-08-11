@@ -22,23 +22,23 @@ int main( int narg, char** argv ) {
   const int NUMSCOPES = 2;
   const int MAXCH = 4;
   std::string output_filenames[NUMSCOPES];
-  output_filenames[0]="output_wfms_tekdpo_2inch_1600V_LED_080414_0";
-  output_filenames[1]="output_wfms_tektds_SiPM4_Trigger_080414_0";
+  output_filenames[0]="output_wfms_tekdpo_arduino_test";
+  output_filenames[1]="output_wfms_tektds_arduino_test";
   std::string ips[NUMSCOPES];
   ips[0] = "192.168.1.101"; //DPO5054
-  ips[1] = "192.168.1.3";  //TDS5054
-  bool use_arduino_trigger = false;
+  ips[1] = "192.168.1.3";  //TDS554
+  bool use_arduino_trigger = false; // True for SiPM; False for LED
   bool record_scopes[NUMSCOPES] = {true, false }; //LED
-  //bool record_scopes[NUMSCOPES] = {false, true }; //SiPM
+  //bool record_scopes[NUMSCOPES] = {true, true }; //SiPM
   bool record_channel[2][4] = { {false,true,false,false},
   				{false,false,false,false} }; //LED
   //bool record_channel[2][4] = { {false,false,false,false},
   //				{true,true,true,true} }; //SiPM
   int ntottraces = 40000;
   int nframes = 1000; //LED
-  //int nframes = 23; //SiPM
-  int nsamples_per_trace = 1000; //LED
-  //int nsamples_per_trace = 5000; //SiPM
+  //int nframes = 10; //SiPM
+  int nsamples_per_trace = 1250; //LED
+  //int nsamples_per_trace = 500; //SiPM
   bool use_fastframe = true;
   bool run_display = false;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };
@@ -97,14 +97,14 @@ int main( int narg, char** argv ) {
   std::cout << "Loading Arduino Trigger..." << std::endl;
   TKVArduinoTrigger* trig = NULL;
   if ( use_arduino_trigger )  {
-    new TKVArduinoTrigger();
+    trig = new TKVArduinoTrigger();
     if ( !trig->isconnected() ) {
       std::cout << "Could not connect arduino. quitting." << std::endl;
       delete trig;
       return -1;
     }
     std::cout << "Set veto mode." << std::endl;
-    trig->setVetoMode();
+    //trig->setVetoMode(); 
   }
 
   std::cout << "Staring acquisition loop ...." << std::endl;
@@ -216,6 +216,11 @@ int main( int narg, char** argv ) {
       continue;
     root_output[i]->saveWaveforms();
     std::cout << "Finished. Scope on " << ips[i] << " collected " << tot_acquired[i] << " waveforms" << std::endl;
+  }
+
+  if ( use_arduino_trigger ) {
+    trig->setOFFstate();  
+    delete trig;
   }
   
 
