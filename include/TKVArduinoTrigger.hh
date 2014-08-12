@@ -19,6 +19,7 @@ public:
   int setOFFstate();
   void setVetoMode(); // sends 1, when OFF state asked for
   void setTriggerMode(); // sends 1, when ON state asked for
+  bool isVetoMode();
 
 protected:
   bool connected;

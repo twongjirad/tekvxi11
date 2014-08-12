@@ -72,3 +72,7 @@ void TKVArduinoTrigger::setTriggerMode() {
   else
     setONstate();
 }
+
+bool TKVArduinoTrigger::isVetoMode() {
+  return vetomode;
+}
