@@ -20,9 +20,7 @@ TKVWaveformTree::TKVWaveformTree( std::string filename )
 #ifdef ROOTENABLED
   waveforminfo = NULL;
   waveformdata = NULL;
-  //m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
   m_outfile = NULL;
-  //new TFile( getfilename().c_str(), "RECREATE" );
 #endif
 
 }
@@ -57,7 +55,9 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
   
 #ifdef ROOTENABLED
   // create file
-  m_outfile = new TFile( getfilename().c_str(), "RECREATE" );
+  m_outfile = new TFile( getfilename().c_str(), "NEW" );
+  if ( !m_outfile )
+    assert(false);
 
   // Setup in File's directory
   m_outfile->cd();
@@ -228,3 +228,4 @@ void TKVWaveformTree::setupInputTrees() {
 #endif
 
 }
+
