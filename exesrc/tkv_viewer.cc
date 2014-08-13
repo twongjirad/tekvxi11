@@ -29,19 +29,29 @@ int main( int narg, char** argv ) {
 
 #ifdef ROOTENABLED
   std::map< std::string, TKVWaveformTree* > inputData;
+  std::vector< TKVWaveformTree* > treeData;
   for ( std::vector< std::string >::iterator it=inputs.begin(); it!=inputs.end(); it++ ) {
     TKVWaveformTree* data = new TKVWaveformTree( *it );
     data->setupForInput();
     inputData[*it] = data;
+    treeData.push_back( data );
   }
 
-  for ( std::vector< std::string >::iterator it=inputs.begin(); it!=inputs.end(); it++ ) {
-    std::cout << "========================================================" << std::endl;
-    std::cout << "DISPLAYING DATA FOR " << *it << std::endl;
-    std::cout << "--------------------------------------------------------" << std::endl;
-    TKVRootDisplay display( *it );
-    display.display( inputData[*it] );
-  }
+  // for ( std::vector< std::string >::iterator it=inputs.begin(); it!=inputs.end(); it++ ) {
+  //   std::cout << "========================================================" << std::endl;
+  //   std::cout << "DISPLAYING DATA FOR " << *it << std::endl;
+  //   std::cout << "--------------------------------------------------------" << std::endl;
+  //   TKVRootDisplay display( *it );
+  //   display.display( inputData[*it] );
+  //   //display.display( inputData[*it] );
+  // }
+
+  std::cout << "========================================================" << std::endl;
+  std::cout << "DISPLAYING DATA" << std::endl;
+  std::cout << "--------------------------------------------------------" << std::endl;
+  TKVRootDisplay display( "my waveforms" );
+  display.display( treeData );
+
 #endif
 
   return 0;
