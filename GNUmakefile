@@ -1,6 +1,6 @@
 #SETTINGS
 GXX = g++
-VXIDIR=/home/tmw/working/vxi11_1.10
+VXIDIR=./vxi11_1.10
 VXILIB=$(VXIDIR)/libvxi11_1.10.a
 LOCAL_INC = -I./include
 LOCAL_LIB = 
