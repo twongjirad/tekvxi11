@@ -3,7 +3,7 @@
 #SETTINGS
 GXX = g++
 LOCAL_INC = -I./include -I$(HODODAQ_INCDIR) -I$(HODODAQ_HOME)/crol_api/include -I$(TEKVXI11_DIR)/include -I$(TEKVXI11_DIR)/vxi11_1.10
-LOCAL_LIB = -L$(HODODAQ_LIBDIR) -lHodo 
+LOCAL_LIB = -L$(HODODAQ_LIBDIR) -lHodo -L$(HODODAQ_HOME) -lokFrontPanel
 LOCAL_LIB += -L$(TEKVXI11_DIR)/vxi11_1.10 -lvxi11_1.10
 LOCAL_LIB += -L$(TEKVXI11_DIR) -ltekvxi 
 LOCAL_LIB += -L$(TEKVXI11_DIR)/vxi11_1.10 -lvxi11_1.10

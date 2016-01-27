@@ -13,6 +13,7 @@ TKVRootDisplay::TKVRootDisplay( std::string label ) {
   lastwfm = -1;
   nchannels = -1;
   m_label = label;
+  m_batch_mode = false;
 #ifdef ROOTENABLED
   canvas = NULL;
   wfms = NULL;
@@ -85,6 +86,9 @@ void TKVRootDisplay::display( TKVWaveformTree* wfmdata, int wfm_num ) {
       }
     }
     canvas->Update();
+
+    if ( m_batch_mode )
+      break; // break out of response loop.
 
     std::string response;
     bool validresponse;

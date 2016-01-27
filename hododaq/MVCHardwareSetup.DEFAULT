@@ -1,0 +1,11 @@
+#tot number of  voltbuses
+2
+#number of  veto voltbuses  (place veto busses at end of lists below!)
+0
+#addresses of all voltbuses 
+0 1
+#number of svi's connected to each voltbus defined in the order the voltbuses are addressed above.
+4 4
+#_hardware_ address of each SVI hooked up to each voltbus, in order
+1 2 3 4
+1 2 3 4

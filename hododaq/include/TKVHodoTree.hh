@@ -28,11 +28,13 @@ public:
   std::vector<int>* _DEADTIME;
   
   std::vector<int>* _vars[8];
+  bool fBranchesSetup;
 
   void clearvariables();
   void resizevars(int nhits);
   HodoHit_t GetHit( int ihit );
   int StoreHits( std::vector<HodoHit_t>& hits );
+  void setupHodoBranches();
 };
 
 #endif

@@ -78,6 +78,19 @@ void TKVHodoView::DrawHits( std::vector<HodoHit_t>& hits ) {
 }
 
 void TKVHodoView::Draw() {
+  HodoCan->cd(1);
+  for ( int stac = 0; stac < 4; ++stac ) {
+    for ( int PMT = 0; PMT < 16; ++PMT ) {
+      HodoGridA[stac][PMT]->Draw();
+      HodoGridB[stac][PMT]->Draw();
+    }
+  }
+  HodoCan->cd(2);
+  for ( int stac = 0; stac < 4; ++stac ) {
+    for ( int PMT = 0; PMT < 16; ++PMT ) {
+      HodoGridB[stac][PMT]->Draw();
+    }
+  }
   for (int c=1; c<=2; c++) {
     HodoCan->cd(c)->Modified(); 
     HodoCan->cd(c)->Update();

@@ -79,6 +79,7 @@ void TKVWaveformTree::setupTrees( TKVWaveformBufferCollection* waveforms ) {
 
   // Get channel information
   bool atleastone = false;
+  std::cout << "Setting up " << numchannels << " waveform branches" << std::endl;
   for (int i=0; i<numchannels; i++) {
     TKVWaveformBuffer* ch_wfm = waveforms->getChannelBuffer(i);
     if ( ch_wfm->isallocated() ) {

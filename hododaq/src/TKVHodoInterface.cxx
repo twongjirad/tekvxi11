@@ -30,7 +30,7 @@ bool TKVHodoInterface::BringDown() {
 
 
 int TKVHodoInterface::GetOneEvent( std::vector<HodoHit_t>& hits ) {
-  usleep(100);
+
   int nHits = 0;
   hits.clear();
 

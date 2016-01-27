@@ -1,37 +1,11 @@
 #include "TKVHodoTree.hh"
 #include "TTree.h"
 
+#include <iostream>
+
 TKVHodoTree::TKVHodoTree( std::string filename ) 
   : TKVWaveformTree( filename ) {
-  
-  // append hodoscope variables to tree
-  _CBUS = new std::vector<int>;
-  _STAC = new std::vector<int>;
-  _PMT  = new std::vector<int>;
-  _ADC0 = new std::vector<int>;
-  _ADC1 = new std::vector<int>;
-  _TDC  = new std::vector<int>;
-  _TICK = new std::vector<int>;
-  _DEADTIME = new std::vector<int>;
-
-  _vars[0] = _CBUS;
-  _vars[1] = _STAC;
-  _vars[2] = _PMT;
-  _vars[3] = _ADC0;
-  _vars[4] = _ADC1;
-  _vars[5] = _TDC;
-  _vars[6] = _TICK;
-  _vars[7] = _DEADTIME;
-
-  waveformdata->Branch("cbus", _CBUS);
-  waveformdata->Branch("stac",_STAC);
-  waveformdata->Branch("pmt", _PMT);
-  waveformdata->Branch("adc0",_ADC0);
-  waveformdata->Branch("adc1",_ADC1);
-  waveformdata->Branch("tdc", _TDC);
-  waveformdata->Branch("tick",_TICK);
-  waveformdata->Branch("deadtime",_DEADTIME);
-
+  fBranchesSetup = false;
 }
 
 TKVHodoTree::~TKVHodoTree() {
@@ -51,6 +25,11 @@ void TKVHodoTree::resizevars( int nhits ) {
 
 
 int TKVHodoTree::StoreHits( std::vector<HodoHit_t>& hits ) {
+  
+  if ( !fBranchesSetup ) {
+    setupHodoBranches();
+  }
+
   usleep(100);
   int nHits = hits.size();
   resizevars(nHits);
@@ -79,4 +58,40 @@ HodoHit_t TKVHodoTree::GetHit( int ihit ) {
   hit.tick = _TICK->at(ihit);
   hit.deadtime = _DEADTIME->at(ihit);
   return hit;
+}
+
+void TKVHodoTree::setupHodoBranches() {
+
+  if ( waveformdata==NULL ) {
+    std::cout << "WAVEFORM TREE NOT CREATED YET!!" << std::endl;
+  }
+
+  // append hodoscope variables to tree
+  _CBUS = new std::vector<int>;
+  _STAC = new std::vector<int>;
+  _PMT  = new std::vector<int>;
+  _ADC0 = new std::vector<int>;
+  _ADC1 = new std::vector<int>;
+  _TDC  = new std::vector<int>;
+  _TICK = new std::vector<int>;
+  _DEADTIME = new std::vector<int>;
+
+  _vars[0] = _CBUS;
+  _vars[1] = _STAC;
+  _vars[2] = _PMT;
+  _vars[3] = _ADC0;
+  _vars[4] = _ADC1;
+  _vars[5] = _TDC;
+  _vars[6] = _TICK;
+  _vars[7] = _DEADTIME;
+
+  waveformdata->Branch("cbus", &(*_CBUS));
+  waveformdata->Branch("stac", &(*_STAC));
+  waveformdata->Branch("pmt",  &(*_PMT));
+  waveformdata->Branch("adc0", &(*_ADC0));
+  waveformdata->Branch("adc1", &(*_ADC1));
+  waveformdata->Branch("tdc",  &(*_TDC));
+  waveformdata->Branch("tick", &(*_TICK));
+  waveformdata->Branch("deadtime", &(*_DEADTIME));
+
 }

@@ -24,14 +24,16 @@ int main( int narg, char** argv ) {
   std::string output_filenames;
   output_filenames = "output_wfms_hodo_test";
   std::string ips = "192.168.1.3";  //TDS554;
-  bool record_channel[4] = {true,false,false,false};
+  bool record_channel[4] = {false,true,false,false};
 
-  int ntottraces = 40000;
-  int nframes = 1000; //LED
+  int ntottraces = 10;
+  int nframes = 1; //LED
   int nsamples_per_trace = 1250; //LED
   //int nsamples_per_trace = 500; //SiPM
   bool use_fastframe = false; /// DONT USE FASTFRAME
-  bool run_display = false;
+  bool run_display = true;
+  bool pause_display = false;
+  int HODO_MAX_ATTEMPTS = 100000;
   enum { ROOTOUT=0, BINARYOUT, ASCIIOUT };
   int output_format = ROOTOUT;
   // --------------------------------------------------------------------------
@@ -69,7 +71,10 @@ int main( int narg, char** argv ) {
   hododisplay = new TKVHodoView();
   root_output =  new TKVHodoTree( output_filenames+".root" );
   root_output->setupForOutput();
-  
+  if ( run_display )
+    hododisplay->Draw();
+  wfmdisplay->setbatchmode(true);
+
   std::cout << "Loading HodoScope" << std::endl;
   TKVHodoInterface& hodo = TKVHodoInterface::Hodo();
   hodo.Initialize();
@@ -81,7 +86,7 @@ int main( int narg, char** argv ) {
 
   bool finished = false;
   int totwaveforms = 0;
-
+  int hodo_attempts = 0;
   while ( !finished ) {
 
     // acquisition loop.
@@ -89,14 +94,35 @@ int main( int narg, char** argv ) {
     // time(&acqstart);
     // time(&acqend);
     // while ( acqend-acqstart < HodoWaitTime ) {
+
+    // arm scope
+    if ( use_fastframe )
+      tek->acquireFastFrame( nsamples_per_trace, nframes );
+    else
+      tek->acquireOneTrigger( nsamples_per_trace );
+
     std::cout << "Wait for hodotrigger" << std::endl;
-    usleep(100);
     std::vector<HodoHit_t> hits;
-    int nHits = hodo.GetOneEvent(hits);
-    if ( nHits>0 ) {
-      std::cout << "Received " << nHits << " hodoscope hits" << std::endl;
+    int nHits = 0;
+    while ( nHits==0 && hodo_attempts<HODO_MAX_ATTEMPTS ) {
+      nHits = hodo.GetOneEvent(hits);
+      if ( nHits>0 ) {
+	std::cout << "Received " << nHits << " hodoscope hits" << std::endl;
+	hodo_attempts = 0;
+      }
+      else {
+	usleep(100);
+	//std::cout << "Received no hodoscope hits" << std::endl;
+	hodo_attempts++;
+	// if ( hodo_attempts>0 && hodo_attempts%10000 )
+	//   std::cout << "still waiting on hodoscope hits" << std::endl;
+      }
     }
-    std::cout << "Collecting buffers ... " << std::endl;
+    if ( hodo_attempts>=HODO_MAX_ATTEMPTS ) {
+      std::cout << "Hodo Attempts Maxed out." << std::endl;
+      break;
+    }
+    std::cout << "Collecting scope buffers ... " << std::endl;
     int nwaveforms = 0;
     // collect buffers
     tot_acquired += tek->collectWaveforms();
@@ -113,24 +139,26 @@ int main( int narg, char** argv ) {
       hododisplay->ClearView();
       hododisplay->DrawHits( hits );
   
-      std::string response;
-      std::cout << "Acquired one set of hodohits/waveform buffer" << std::endl;
-      std::cout << "Press [c] to continue, [q] to quit." << std::endl;
-      std::cin >> response;
-      if (response=="q")
-	finished = true;
+      if ( pause_display ) {
+	std::string response;
+	std::cout << "Acquired one set of hodohits/waveform buffer" << std::endl;
+	std::cout << "Press [c] to continue, [q] to quit." << std::endl;
+	std::cin >> response;
+	if (response=="q")
+	  finished = true;
+      }
     }// end of display mode
+
+    // are we done?
+    finished = true;
+    if ( tot_acquired<ntottraces ) {
+      finished = false;
+      std::cout << "\nAcquired " << tot_acquired << " waveforms so far.\n";
+    }
     else {
-      // batch mode
-      finished = true;
-      if ( tot_acquired<ntottraces ) {
-	finished = false;
-	std::cout << "\nAcquired " << tot_acquired << " waveforms so far.\n";
-      }
-      else {
-	std::cout << "Scope on " << ips << ": collected " << tot_acquired << " of " << ntottraces << " waveforms" << std::endl;
-      }
-    }//end of batch reporting
+      std::cout << "Scope on " << ips << ": collected " << tot_acquired << " of " << ntottraces << " waveforms" << std::endl;
+    }
+
   }//end of acquisition loop
   
   std::cout << "Save the Data!" << std::endl;
