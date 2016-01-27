@@ -13,6 +13,8 @@
 
 #include "TApplication.h"
 
+int VERBOSE = 0; //GROSS
+
 int main( int narg, char** argv ) {
 
   TApplication* app = new TApplication("app",0,0);

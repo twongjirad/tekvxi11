@@ -1,9 +1,8 @@
 #SETTINGS
 GXX = g++
 VXIDIR=./vxi11_1.10
-VXILIB=$(VXIDIR)/libvxi11_1.10.a
 LOCAL_INC = -I./include
-LOCAL_LIB = 
+LOCAL_LIB = -L$(VXIDIR) -lvxi11_1.10
 CXXFLAGS = -g -fPIC
 LDFLAGS = -lstdc++
 EXES = test_tkvscope run_synced_acq tkv_viewer ping_scope arduino_toggle check_sync
@@ -18,7 +17,6 @@ EXESRC = $(addprefix exesrc/, $(addsuffix $(EXES),.cc))
 EXEOBJ = $(addprefix .obj/,$(notdir $(EXESRC:.cc=.o)))
 EXEBIN = $(addprefix bin/,$(EXES))
 LOCAL_LIB += 
-STATIC_LIB += $(VXILIB) 
 
 # ROOT SETTINGS
 ifeq ($(ENABLEROOT),1)

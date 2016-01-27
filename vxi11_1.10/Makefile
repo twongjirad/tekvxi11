@@ -1,7 +1,8 @@
 VERSION=1.08
 
 #CFLAGS = -Wall -g
-CFLAGS = -g
+CFLAGS = -g -fPIC
+LDFLAGS = -shared
 INSTALL = install
 prefix = /usr/local
 CXX = g++
@@ -18,8 +19,7 @@ vxi11_user.o: vxi11_user.cc vxi11.h
 	$(CXX) $(CFLAGS) -c $< -o $@
 
 lib:
-	ar rcs libvxi11_1.10.a  vxi11_user.o vxi11_clnt.o vxi11_xdr.o
-	ranlib libvxi11_1.10.a
+	$(CXX) $(LDFLAGS) -o libvxi11_1.10.so vxi11_user.o vxi11_clnt.o vxi11_xdr.o
 
 vxi11.h vxi11_clnt.c vxi11_xdr.c : vxi11.x
 	rpcgen -M vxi11.x
@@ -28,7 +28,7 @@ TAGS: $(wildcard *.c) $(wildcard *.h) $(wildcard *.cc)
 	etags $^
 
 clean:
-	rm -f *.o vxi11_cmd vxi11.h vxi11_svc.c vxi11_xdr.c vxi11_clnt.c TAGS
+	rm -f *.o vxi11_cmd vxi11.h vxi11_svc.c vxi11_xdr.c vxi11_clnt.c TAGS *.so *.a
 
 install: vxi11_cmd
 	$(INSTALL) vxi11_cmd $(DESTDIR)$(prefix)/bin/
@@ -42,3 +42,5 @@ dist : distclean
 distclean : 
 	rm -rf vxi11-$(VERSION)
 	rm -f vxi11-$(VERSION).tar.gz
+
+all: lib

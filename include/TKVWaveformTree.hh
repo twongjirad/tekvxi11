@@ -16,7 +16,7 @@ class TKVWaveformTree : public  TKVVWaveformOutput {
 public:
 
   TKVWaveformTree( std::string filename );
-  ~TKVWaveformTree();
+  virtual ~TKVWaveformTree();
   int entries();
 
 #ifdef ROOTENABLED
