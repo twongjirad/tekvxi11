@@ -46,16 +46,17 @@ The scopes are once again armed, and then triggered together.
 Repeating this sequence allows the scopes to stay in sync.
 
 The program was written with the following network configuration in mind (diagram actually look like something in text editors):
-         [router]
-	     |
-  ---------------------------------------------- ...
-  |                          |         |
-[controlling computer]    [scope 1]  [scope 2]   ...
-  |                         |   |      |   |
-[Arduino via USB/serial]    |   |      |   |
-  |                         |   |      |   |
-  | (veto)                  |   |      |   |
-[trigger]  -------------------\ | /------\ | /--- ...
-  |                             |          |
-  |                             |          |
-[measurement instruments]------------------------- ...
+
+             [router]
+    	     |
+      ---------------------------------------------- ...
+      |                          |         |
+    [controlling computer]    [scope 1]  [scope 2]   ...
+      |                         |   |      |   |
+    [Arduino via USB/serial]    |   |      |   |
+      |                         |   |      |   |
+      | (veto)                  |   |      |   |
+    [trigger]  -------------------\ | /------\ | /--- ...
+      |                             |          |
+      |                             |          |
+    [measurement instruments]------------------------- ...
