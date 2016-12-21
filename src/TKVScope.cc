@@ -2,9 +2,11 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <stdexcept>
 #include <time.h>
 #include <unistd.h>
 #include <assert.h>
+
 
 #include "TKVTekChannelSettings.hh"
 #include "TKVTekHorizontalSettings.hh"
@@ -31,7 +33,7 @@ TKVScope::TKVScope( std::string ipaddress ) {
   ssn << "TKVScope_" << ipaddress << "_iid" << m_iid;
   m_nickname = ssn.str();
   m_clink = open_device( ipaddress );
-
+  m_verbosity = 0;
   
   memset( m_channelSettings, 0, MAX_CHANNELS );
   m_horizontalSettings = NULL;
@@ -40,6 +42,20 @@ TKVScope::TKVScope( std::string ipaddress ) {
   m_channelBuffers = new TKVWaveformBufferCollection( ipaddress );
 
   fBinaryMode = true;
+  if (m_clink) {
+    // we disable headers in the reply
+    int err = sendcmd( "HDR 0" );
+    if ( err==0 )
+      std::cout << "Scope on " << ipaddress << " ready." << std::endl;
+    else {
+      throw  std::runtime_error("TKVScope::TKVScope -- Error: Could not turn headers off.");
+    }
+  }
+  else {
+    std::stringstream ss;
+    ss << "TKVScope::TKVScope - Error: Could not open device on " << ipaddress << std::endl;
+    throw std::runtime_error(ss.str());
+  }
 
 }
 
@@ -199,6 +215,9 @@ void TKVScope::readChannelSettings(int ch) {
   // bandwidth
   TKVTekChannelSettings* chdata = new TKVTekChannelSettings( ch );
   err = query( strch+":BAN?", buf );
+  if ( m_verbosity>=2 ) {
+    std::cout << "query: " << strch << ":BAN? -- result=" << err << " buffer=" << buf << std::endl;
+  }
   chdata->bandwidth = std::atof( buf );
 
   // coupling

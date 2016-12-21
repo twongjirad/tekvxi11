@@ -44,6 +44,7 @@ public:
   int collectWaveforms();
   void acqBinary() { fBinaryMode = true; }; // default
   void acqASCII() { fBinaryMode = false; };// not recommended
+  void setVerbosity(int verbose) { m_verbosity=verbose; };
 
   TKVTekChannelSettings* getChannelSettings(int ch);
   TKVTekHorizontalSettings* getHorizontalSettings() { return m_horizontalSettings; };
@@ -66,6 +67,7 @@ protected:
   std::string m_nickname;
   CLINK* m_clink;
   bool fBinaryMode;
+  int m_verbosity;
 
   TKVTekChannelSettings* m_channelSettings[MAX_CHANNELS];
   TKVTekHorizontalSettings* m_horizontalSettings;

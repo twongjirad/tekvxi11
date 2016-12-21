@@ -42,7 +42,10 @@ endif
 
 all: $(EXEBIN)
 
-lib: libtekvxi.so
+lib: libtekvxi.so libvxi11
+
+libvxi11: 
+	make lib --directory=./vxi11_1.10
 
 libtekvxi.so: $(COBJS)
 	echo "Making library"
@@ -53,9 +56,9 @@ libtekvxi.so: $(COBJS)
 .obj/%.o: exesrc/%.cc
 	mkdir -p .obj
 	$(GXX) -c $(CXXFLAGS) -o $@ $^
-bin/%: .obj/%.o libtekvxi.so
+bin/%: .obj/%.o libvxi11 libtekvxi.so
 	mkdir -p bin
-	$(GXX) $(LDFLAGS) $^ $(LOCAL_LIB) $(STATIC_LIB) -o $@
+	$(GXX) $(LDFLAGS) .obj/$*.o -L. -ltekvxi $(LOCAL_LIB) $(STATIC_LIB) -o $@
 
 .DEFAULT: $(EXEBIN)
 

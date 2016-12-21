@@ -1,7 +1,7 @@
 VERSION=1.08
 
 #CFLAGS = -Wall -g
-CFLAGS = -g
+CFLAGS = -g -fPIC
 INSTALL = install
 prefix = /usr/local
 CXX = g++
@@ -17,9 +17,12 @@ vxi11_cmd.o: vxi11_cmd.cc vxi11_user.cc vxi11.h
 vxi11_user.o: vxi11_user.cc vxi11.h
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-lib:
+lib: vxi11_user.o vxi11_clnt.o vxi11_xdr.o
 	ar rcs libvxi11_1.10.a  vxi11_user.o vxi11_clnt.o vxi11_xdr.o
 	ranlib libvxi11_1.10.a
+
+solib: vxi11_user.o vxi11_clnt.o vxi11_xdr.o
+	$(CXX) -shared -o libvxi11_1.10.so vxi11_user.o vxi11_clnt.o vxi11_xdr.o
 
 vxi11.h vxi11_clnt.c vxi11_xdr.c : vxi11.x
 	rpcgen -M vxi11.x
@@ -42,3 +45,5 @@ dist : distclean
 distclean : 
 	rm -rf vxi11-$(VERSION)
 	rm -f vxi11-$(VERSION).tar.gz
+
+all: lib solib

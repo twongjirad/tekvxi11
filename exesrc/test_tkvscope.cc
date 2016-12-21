@@ -12,12 +12,13 @@ int main( int narg, char** argv ) {
 
   TApplication* app = new TApplication("app",0,0);
 
-  std::string ipaddress = "192.168.1.101";
+  std::string ipaddress = "192.168.1.3";
 
   TKVScopeManager* man = TKVScopeManager::getScopeManager();
   man->openDevice( ipaddress.c_str() );
   TKVScope* tek1 = man->getScope( ipaddress.c_str() );
   tek1->idn();
+  //tek1->setVerbosity(2); // if things go pear-shaped
 
   tek1->readChannelSettings( 1 );
   tek1->readChannelSettings( 2 );
@@ -26,8 +27,8 @@ int main( int narg, char** argv ) {
   for (int i=1; i<=4; i++)
     tek1->getChannelSettings(i)->print();
 
-  //tek1->setChannelToRecord( 1, true );
-  tek1->setChannelToRecord( 2, true );
+  tek1->setChannelToRecord( 1, true );
+  //tek1->setChannelToRecord( 2, true );
   // tek1->setChannelToRecord( 3, true );
   // tek1->setChannelToRecord( 4, true );
 

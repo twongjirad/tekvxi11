@@ -6,8 +6,8 @@ Dependencies:
 
 vxi11: 
   Library by S. Sharples which provides a C API to send and receive commands with instruments using the VXI-11 protocol. 
-  Code can be found here: http://optics.eee.nottingham.ac.uk/vxi11/
-  Development done with version 1.10
+  Original code can be found here: http://optics.eee.nottingham.ac.uk/vxi11/
+  Development done with version 1.10.  A copy of this version is contained in this repository.
 
 ROOT:
   Available here: root.cern.ch
@@ -27,15 +27,21 @@ Probably other ways to setup the network.
 Compilation
 -------------
 
-Need to set the location of VXI11 library and include files in VXILIB and VIXDIR, respectively, in the GNUmakefile.
-Enable building with or without ROOT using ENABLEROOT variable, also found in the GNUmakefile.
+Make sure your ROOT environment vairables are setup. 
+You can test if this is the case by running
+
+    root-config
+
+You should see something ocme back.
+
+If that is set, just go into the folder containing this readme and type: `make`. It should build.
 
 -------------
 Executables
 -------------
 
 test_tkvscope:
-This is a working space for me to test out new features as I implement them.
+This is a working space for me to test out new features as I implement them.  It provides a test program to read in one waveform.
 
 run_synced_acq:
 This program was written for a specific application.  
@@ -45,7 +51,7 @@ Once the scopes finishing recording their traces, the waveforms are transferred 
 The scopes are once again armed, and then triggered together.  
 Repeating this sequence allows the scopes to stay in sync.
 
-The program was written with the following network configuration in mind (diagram actually look like something in text editors):
+The program was written with the following network configuration in mind (diagram actually looks like something in text editors):
 
              [router]
     	     |
@@ -60,3 +66,9 @@ The program was written with the following network configuration in mind (diagra
       |                             |          |
       |                             |          |
     [measurement instruments]------------------------- ...
+
+
+-----------
+Hodo Scope
+-----------
+There is another version of this code that handles synchronization with the Indiana University hodoscope.  Got to the `tmw_hodo` branch to get it.
