@@ -7,7 +7,10 @@ LOCAL_LIB =
 CXXFLAGS = -g -fPIC
 LDFLAGS = -lstdc++
 EXES = test_tkvscope run_synced_acq tkv_viewer ping_scope arduino_toggle check_sync
+
+# ROOT SETTINGS: SHOULD ALWAYS BE SET TO ON FOR NOW
 ENABLEROOT = 1
+# USB FOR ARDUINO COMMUNICATION
 ENABLEUSB = 0
 
 # BUILD VARIABLES (No hard-coded paths here)
@@ -20,7 +23,6 @@ EXEBIN = $(addprefix bin/,$(EXES))
 LOCAL_LIB += 
 STATIC_LIB += $(VXILIB) 
 
-# ROOT SETTINGS
 ifeq ($(ENABLEROOT),1)
 CXXFLAGS += -DROOTENABLED `root-config --cflags`
 LOCAL_LIB += `root-config --libs --glibs`
